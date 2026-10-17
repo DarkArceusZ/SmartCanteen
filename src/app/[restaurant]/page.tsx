@@ -1,11 +1,14 @@
+import omit from "lodash/omit";
 import type { Metadata } from "next";
 import { capitalize } from "xtreme-ui";
-
 import { ChatInterface } from "#components/chatbot/Chat";
 import { CustomerProvider } from "#components/context";
 import NavSideBar from "#components/layout/NavSideBar";
 import JsonLd from "#components/seo/JsonLd";
+import { getRestaurantData } from "#utils/database/helper/account";
 import { getRestaurantProfile } from "#utils/database/helper/getRestaurantProfile";
+import type { TMenu } from "#utils/database/models/menu";
+import type { TTable } from "#utils/database/models/table";
 import { SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import { buildMetadata } from "#utils/seo/metadata";
 
@@ -39,11 +42,22 @@ export async function generateMetadata({ params }: IRestaurantProps): Promise<Me
 
 const Restaurant = async ({ params }: IRestaurantProps) => {
 	const { restaurant } = await params;
-	const profile = await getRestaurantProfile(restaurant);
+	const [profile, accountRaw] = await Promise.all([getRestaurantProfile(restaurant), getRestaurantData(restaurant)]);
 	const name = profile?.name ?? capitalize(restaurant);
 
+	const initialRestaurant = accountRaw
+		? JSON.parse(
+				JSON.stringify({
+					...omit(accountRaw, ["__v", "_id", "kitchens", "password", "profile", "menus", "tables"]),
+					profile: omit(accountRaw?.profile, ["__v", "_id"]),
+					menus: accountRaw?.menus?.map((v: TMenu) => omit(v, ["__v"])),
+					tables: accountRaw?.tables?.map((v: TTable) => omit(v, ["__v", "_id"])),
+				}),
+			)
+		: undefined;
+
 	return (
-		<CustomerProvider>
+		<CustomerProvider initialRestaurant={initialRestaurant}>
 			<JsonLd
 				data={{
 					"@context": "https://schema.org",

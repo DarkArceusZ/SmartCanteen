@@ -42,10 +42,20 @@ const OrderPage = () => {
 	const [floatHeader, setFloatHeader] = useState(false);
 	const [showInfoCard, setShowInfoCard] = useState(false);
 
-	const [filteredProducts, setFilteredProducts] = useState<Array<TMenuCustom>>(menus);
+	const filteredProducts = useMemo(() => {
+		const search = searchParam.toLowerCase();
+		return (
+			menus?.filter?.(
+				({ name, description, category: cat }) =>
+					(search ? name?.toLowerCase().includes(search) || description?.toLowerCase().includes(search) || cat?.toLowerCase().includes(search) : true) &&
+					(selectedCategory === "all" ? true : cat?.toLowerCase() === selectedCategory.toLowerCase()),
+			) ?? []
+		);
+	}, [menus, searchParam, selectedCategory]);
+
 	const [selectedProducts, setSelectedProducts] = useState<Array<TMenuCustom>>([]);
-	const [hasImageItems, setHasImageItems] = useState(false);
-	const [hasNonImageItems, setHasNonImageItems] = useState(false);
+	const hasImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !!product.image) ?? false, [filteredProducts]);
+	const hasNonImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !product.image) ?? false, [filteredProducts]);
 
 	const showOrderButton = useMemo(() => {
 		if (!table || !restaurant?.tables?.length) return false;
@@ -127,18 +137,6 @@ const OrderPage = () => {
 	};
 
 	useEffect(() => {
-		const search = searchParam.toLowerCase();
-
-		setFilteredProducts(
-			menus?.filter?.(
-				({ name, description, category: cat }) =>
-					(search ? name?.toLowerCase().includes(search) || description?.toLowerCase().includes(search) || cat?.toLowerCase().includes(search) : true) &&
-					(selectedCategory === "all" ? true : cat?.toLowerCase() === selectedCategory.toLowerCase()),
-			),
-		);
-	}, [selectedCategory, menus, searchParam]);
-
-	useEffect(() => {
 		if (selectedCategory !== "all" && restaurant?.profile?.categories?.length) {
 			const exists = restaurant.profile.categories.some((c) => c.toLowerCase() === selectedCategory.toLowerCase());
 			if (!exists) {
@@ -151,11 +149,6 @@ const OrderPage = () => {
 		params.set({ search: searchValue });
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchValue, params.set]);
-
-	useEffect(() => {
-		setHasImageItems(filteredProducts?.some((product) => !!product.image) ?? false);
-		setHasNonImageItems(filteredProducts?.some((product) => !product.image) ?? false);
-	}, [filteredProducts]);
 
 	useEffect(() => {
 		if (session.data?.role === "customer") setOrderHeading(["Choose", "Order"]);

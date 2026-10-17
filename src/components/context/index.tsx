@@ -6,6 +6,7 @@ import { XProvider } from "xtreme-ui";
 
 import { ToastManager } from "#components/base/ToastManager";
 
+import type { TAccount } from "#utils/database/models/account";
 import { AdminProvider } from "./Admin";
 import { OrderProvider } from "./Order";
 import { RestaurantProvider } from "./Restaurant";
@@ -20,9 +21,9 @@ export const GlobalProvider = ({ children }: ProviderProps) => {
 	);
 };
 
-export const CustomerProvider = ({ children }: ProviderProps) => {
+export const CustomerProvider = ({ children, initialRestaurant }: CustomerProviderProps) => {
 	return (
-		<RestaurantProvider>
+		<RestaurantProvider initialRestaurant={initialRestaurant}>
 			<ToastManager />
 			<OrderProvider>{children}</OrderProvider>
 		</RestaurantProvider>
@@ -41,4 +42,7 @@ export const DashboardProvider = ({ children }: ProviderProps) => {
 };
 interface ProviderProps {
 	children?: ReactNode;
+}
+interface CustomerProviderProps extends ProviderProps {
+	initialRestaurant?: TAccount;
 }

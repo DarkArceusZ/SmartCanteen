@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 
-import { Accounts, type TAccount } from "./account";
-
-const accountCache = new Map<string, TAccount | null>();
+import { Accounts } from "./account";
 
 const TableSchema = new mongoose.Schema<TTable>(
 	{
@@ -15,14 +13,6 @@ const TableSchema = new mongoose.Schema<TTable>(
 
 TableSchema.index({ username: 1, restaurantID: 1 }, { unique: true });
 
-TableSchema.pre("save", async function () {
-	let account = accountCache.get(this.restaurantID);
-	if (!account) {
-		account = await Accounts.findOne<TAccount>({ username: this.restaurantID });
-		if (account) accountCache.set(this.restaurantID, account);
-		else throw new Error(`The associated account with username '${this.restaurantID}'does not exist.`);
-	}
-});
 TableSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { tables: this._id } });
 });

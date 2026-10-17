@@ -16,7 +16,7 @@ const vegIcon = {
 
 const MenuCard = (props: TMenuCardProps) => {
 	const { className, show, restrictOrder, showInfo, setShowInfo, item, quantity } = props;
-	const [cardRef, inView] = useInView({ threshold: 0 });
+	const [cardRef, inView] = useInView({ threshold: 0, rootMargin: "400px 0px", triggerOnce: true });
 	const [isFlashing, setFlashing] = useState(false);
 	const flashTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -43,6 +43,8 @@ const MenuCard = (props: TMenuCardProps) => {
 	const isSoldOut = item.availability === "sold-out";
 	const isSpecial = item.availability === "todays-special";
 
+	const isHover = typeof window !== "undefined" && window.matchMedia?.("(hover: hover)")?.matches;
+
 	const classList = clsx(
 		"menuCard ",
 		className,
@@ -51,7 +53,7 @@ const MenuCard = (props: TMenuCardProps) => {
 		restrictOrder && "restrictOrder",
 		showInfo && "showInfo",
 		!item.image && "withoutImage",
-		window.matchMedia("(hover: hover)").matches && "hoverSupported",
+		isHover && "hoverSupported",
 	);
 
 	if (!show) return null;

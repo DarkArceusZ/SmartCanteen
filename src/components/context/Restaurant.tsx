@@ -12,15 +12,26 @@ const RestaurantDefault: TRestaurantInitialType = {
 };
 
 export const RestaurantContext = createContext(RestaurantDefault);
-export const RestaurantProvider = ({ children }: TRestaurantProviderProps) => {
+export const RestaurantProvider = ({ children, initialRestaurant }: TRestaurantProviderProps) => {
 	const pathname = usePathname();
-	const { data: restaurant, error, isLoading } = useSWR(`/api/menu?id=${pathname.replace("/", "")}`, fetcher);
+	const restaurantId = pathname ? pathname.replace(/^\//, "").split("/")[0] : "";
+	const {
+		data: restaurant,
+		error,
+		isLoading,
+	} = useSWR(restaurantId ? `/api/menu?id=${restaurantId}` : null, fetcher, {
+		fallbackData: initialRestaurant,
+		revalidateOnFocus: false,
+		revalidateIfStale: false,
+	});
 
-	return <RestaurantContext.Provider value={{ restaurant, error, loading: isLoading }}>{children}</RestaurantContext.Provider>;
+	const activeRestaurant = restaurant ?? initialRestaurant;
+	return <RestaurantContext.Provider value={{ restaurant: activeRestaurant, error, loading: isLoading && !activeRestaurant }}>{children}</RestaurantContext.Provider>;
 };
 
 export type TRestaurantProviderProps = {
 	children?: ReactNode;
+	initialRestaurant?: TAccount;
 };
 
 export type TRestaurantInitialType = {

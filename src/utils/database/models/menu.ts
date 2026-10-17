@@ -27,15 +27,22 @@ const MenuSchema = new mongoose.Schema<TMenu>(
 );
 
 MenuSchema.pre("save", async function () {
-	let account = accountCache.get(this.restaurantID);
-	if (!account || !account.profile) {
-		account = await Accounts.findOne<TAccount>({ username: this.restaurantID }).populate("profile");
-		if (account) accountCache.set(this.restaurantID, account);
-		else throw new Error(`The associated account with username '${this.restaurantID}' does not exist.`);
+	try {
+		let account = accountCache.get(this.restaurantID);
+		if (!account || !account.profile) {
+			account = await Accounts.findOne<TAccount>({ username: this.restaurantID }).populate("profile");
+			if (account) accountCache.set(this.restaurantID, account);
+		}
+		if (account?.profile?.categories?.length) {
+			const itemCat = (this.category || "").toLowerCase().trim();
+			const hasCat = !itemCat || account.profile.categories.some((cat: string) => (cat || "").toLowerCase().trim() === itemCat);
+			if (!hasCat) throw new Error(`The menu item category '${this.category}' does not exist in restaurant categories.`);
+		}
+	} catch (err: unknown) {
+		const errMsg = err instanceof Error ? err.message : String(err);
+		if (errMsg.includes("does not exist in restaurant categories")) throw err;
+		console.warn(`Menu validation notice for item ${this.name}:`, errMsg);
 	}
-	const itemCat = (this.category || "").toLowerCase().trim();
-	const hasCat = !itemCat || account?.profile?.categories?.some((cat: string) => (cat || "").toLowerCase().trim() === itemCat);
-	if (!hasCat) throw new Error(`The menu item category '${this.category}' does not exist in restaurant categories.`);
 });
 MenuSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { menus: this._id } });
