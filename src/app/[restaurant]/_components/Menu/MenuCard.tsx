@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { Icon } from "xtreme-ui";
 
@@ -14,15 +14,18 @@ const vegIcon = {
 	"contains-egg": "f7fb",
 } as const;
 
+const isHoverSupported = typeof window !== "undefined" && Boolean(window.matchMedia?.("(hover: hover)")?.matches);
+
 const MenuCard = (props: TMenuCardProps) => {
-	const { className, show, restrictOrder, showInfo, setShowInfo, item, quantity } = props;
+	const { className, show = true, restrictOrder, showInfo, setShowInfo, item, quantity } = props;
 	const [cardRef, inView] = useInView({ threshold: 0, rootMargin: "400px 0px", triggerOnce: true });
 	const [isFlashing, setFlashing] = useState(false);
 	const flashTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
 	useEffect(() => {
+		const itemId = String(item._id);
 		const handleHighlight = ((e: CustomEvent<{ id: string }>) => {
-			if (e.detail.id === String(item._id)) {
+			if (e.detail.id === itemId) {
 				if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
 
 				setFlashing(false);
@@ -43,8 +46,6 @@ const MenuCard = (props: TMenuCardProps) => {
 	const isSoldOut = item.availability === "sold-out";
 	const isSpecial = item.availability === "todays-special";
 
-	const isHover = typeof window !== "undefined" && window.matchMedia?.("(hover: hover)")?.matches;
-
 	const classList = clsx(
 		"menuCard ",
 		className,
@@ -53,7 +54,7 @@ const MenuCard = (props: TMenuCardProps) => {
 		restrictOrder && "restrictOrder",
 		showInfo && "showInfo",
 		!item.image && "withoutImage",
-		isHover && "hoverSupported",
+		isHoverSupported && "hoverSupported",
 	);
 
 	if (!show) return null;
@@ -115,7 +116,7 @@ const MenuCard = (props: TMenuCardProps) => {
 	);
 };
 
-export default MenuCard;
+export default memo(MenuCard);
 
 type TMenuCardProps = {
 	className?: string;

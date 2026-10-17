@@ -1,5 +1,5 @@
 import { signOut, useSession } from "next-auth/react";
-import { type UIEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type UIEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { ActionCard, Button, Spinner } from "xtreme-ui";
 
@@ -20,15 +20,14 @@ const OrderPage = () => {
 	const { loading, loginOpen, setLoginOpen, order: activeOrder } = useOrder();
 	const { restaurant } = useRestaurant();
 
-	const menus = restaurant?.menus as Array<TMenuCustom>;
+	const menus = useMemo(() => (restaurant?.menus as Array<TMenuCustom>) || [], [restaurant?.menus]);
 	const params = useQueryParams();
-	const table = params.get("table");
-	const searchParam = params.get("search")?.trim() ?? "";
-	const categoryParam = params.get("category")?.trim();
-	const selectedCategory = useMemo(() => {
-		if (!categoryParam || categoryParam.toLowerCase() === "all") return "all";
-		return categoryParam;
-	}, [categoryParam]);
+
+	const [searchValue, setSearchValue] = useState(() => params.get("search")?.trim() ?? "");
+	const [selectedCategory, setSelectedCategory] = useState<string>(() => {
+		const cat = params.get("category")?.trim();
+		return !cat || cat.toLowerCase() === "all" ? "all" : cat;
+	});
 
 	const order = useRef<HTMLDivElement>(null);
 	const categories = useRef<HTMLDivElement>(null);
@@ -38,24 +37,33 @@ const OrderPage = () => {
 	const [sideSheetHeading, setSideSheetHeading] = useState(["Your", "Order"]);
 
 	const [searchActive, setSearchActive] = useState(false);
-	const [searchValue, setSearchValue] = useState("");
 	const [floatHeader, setFloatHeader] = useState(false);
-	const [showInfoCard, setShowInfoCard] = useState(false);
-
-	const filteredProducts = useMemo(() => {
-		const search = searchParam.toLowerCase();
-		return (
-			menus?.filter?.(
-				({ name, description, category: cat }) =>
-					(search ? name?.toLowerCase().includes(search) || description?.toLowerCase().includes(search) || cat?.toLowerCase().includes(search) : true) &&
-					(selectedCategory === "all" ? true : cat?.toLowerCase() === selectedCategory.toLowerCase()),
-			) ?? []
-		);
-	}, [menus, searchParam, selectedCategory]);
-
+	const [showInfoCardId, setShowInfoCardId] = useState<string>("");
 	const [selectedProducts, setSelectedProducts] = useState<Array<TMenuCustom>>([]);
-	const hasImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !!product.image) ?? false, [filteredProducts]);
-	const hasNonImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !product.image) ?? false, [filteredProducts]);
+
+	// Instant local filtering with useMemo
+	const filteredProducts = useMemo(() => {
+		const search = searchValue.trim().toLowerCase();
+		const cat = selectedCategory.trim().toLowerCase();
+		return menus.filter(({ name, description, category }) => {
+			const matchesSearch =
+				!search || name?.toLowerCase().includes(search) || description?.toLowerCase().includes(search) || category?.toLowerCase().includes(search);
+			const matchesCat = cat === "all" || category?.toLowerCase() === cat;
+			return matchesSearch && matchesCat;
+		});
+	}, [menus, searchValue, selectedCategory]);
+
+	const imageProducts = useMemo(() => filteredProducts.filter((product) => !product.hidden && Boolean(product.image)), [filteredProducts]);
+	const nonImageProducts = useMemo(() => filteredProducts.filter((product) => !product.hidden && !product.image), [filteredProducts]);
+
+	// O(1) quantity lookup for all menu cards
+	const selectedQuantityMap = useMemo(() => {
+		const map = new Map<string, number>();
+		for (const p of selectedProducts) {
+			map.set(String(p._id), p.quantity);
+		}
+		return map;
+	}, [selectedProducts]);
 
 	const onMenuScroll = (event: UIEvent<HTMLDivElement>) => {
 		const scrollTop = (event.target as HTMLDivElement).scrollTop;
@@ -67,71 +75,68 @@ const OrderPage = () => {
 		}
 		return setFloatHeader(false);
 	};
-	const onCategoryClick = (categoryName: string) => {
-		if (categoryName.toLowerCase() === "all" || selectedCategory.toLowerCase() === categoryName.toLowerCase()) {
-			params.set({ category: "" });
-		} else {
-			params.set({ category: categoryName });
-		}
-	};
-	const onLoginClick = () => {
-		if (!table) {
+
+	const onCategoryClick = useCallback(
+		(categoryName: string) => {
+			setSelectedCategory((prev) => {
+				const next = categoryName.toLowerCase() === "all" || prev.toLowerCase() === categoryName.toLowerCase() ? "all" : categoryName;
+				params.set({ category: next === "all" ? "" : next });
+				return next;
+			});
+		},
+		[params],
+	);
+
+	const onSearchChange = useCallback(
+		(val: string) => {
+			setSearchValue(val);
+			params.set({ search: val });
+		},
+		[params],
+	);
+
+	const onLoginClick = useCallback(() => {
+		if (!params.get("table")) {
 			params.set({ table: "1" });
 		}
 		setLoginOpen(true);
-	};
-	const increaseProductQuantity = (product: TMenuCustom) => {
+	}, [params, setLoginOpen]);
+
+	const increaseProductQuantity = useCallback((product: TMenuCustom) => {
 		if (product.availability === "sold-out") {
 			toast.error("Sorry, this item is currently sold out!");
 			return;
 		}
-		if (!table) {
-			params.set({ table: "1" });
-		}
-		const selection = [...selectedProducts];
-		if (selectedProducts.some((item) => item._id === product._id)) {
-			selection.forEach((item) => {
-				if (product._id === item._id) item.quantity++;
-			});
-		} else {
+		setSelectedProducts((prev) => {
+			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
+			if (idx >= 0) {
+				const next = [...prev];
+				next[idx].quantity += 1;
+				return next;
+			}
 			product.quantity = 1;
-			selection.push(product);
-		}
-		setSelectedProducts(selection);
-		setSideSheetOpen(true);
-	};
-	const decreaseProductQuantity = (product: TMenuCustom) => {
-		let selection = [...selectedProducts];
-		selection.forEach((item) => {
-			if (product._id === item._id) {
-				item.quantity--;
-				if (item.quantity === 0) {
-					const filter = selection.filter((tempItem) => tempItem._id !== product._id);
-					selection = [...filter];
-				}
-			}
+			return [...prev, product];
 		});
-		setSelectedProducts(selection);
-	};
+		setSideSheetOpen(true);
+	}, []);
 
-	useEffect(() => {
-		if (selectedCategory !== "all" && restaurant?.profile?.categories?.length) {
-			const exists = restaurant.profile.categories.some((c) => c.toLowerCase() === selectedCategory.toLowerCase());
-			if (!exists) {
-				params.set({ category: "" });
+	const decreaseProductQuantity = useCallback((product: TMenuCustom) => {
+		setSelectedProducts((prev) => {
+			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
+			if (idx < 0) return prev;
+			if (prev[idx].quantity <= 1) {
+				return prev.filter((item) => String(item._id) !== String(product._id));
 			}
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedCategory, restaurant?.profile?.categories, params.set]);
-	useEffect(() => {
-		params.set({ search: searchValue });
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [searchValue, params.set]);
+			const next = [...prev];
+			next[idx].quantity -= 1;
+			return next;
+		});
+	}, []);
 
 	useEffect(() => {
 		if (session.data?.role === "customer") setOrderHeading(["Choose", "Order"]);
 		else setOrderHeading(["Explore", "Menu"]);
-	}, [session]);
+	}, [session.data?.role]);
 
 	useEffect(() => {
 		if (
@@ -152,7 +157,7 @@ const OrderPage = () => {
 						{topHeading[0]} <span>{topHeading[1]}</span>
 					</h1>
 					<div className="options">
-						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={setSearchValue} />
+						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={onSearchChange} />
 						{!session.data?.role && <Button className="loginButton" label="Login" onClick={onLoginClick} />}
 						<Button
 							icon="e43b"
@@ -189,49 +194,38 @@ const OrderPage = () => {
 								{orderHeading[0]} <span>{orderHeading[1]}</span>
 							</h1>
 						</div>
-						{hasImageItems && (
+						{imageProducts.length > 0 && (
 							<div className="itemContainer">
 								<div>
-									{filteredProducts?.map(
-										(item, key) =>
-											!item.hidden && (
-												<MenuCard
-													key={key}
-													item={item}
-													increaseQuantity={increaseProductQuantity}
-													decreaseQuantity={decreaseProductQuantity}
-													showInfo={item._id.toString() === showInfoCard.toString()}
-													setShowInfo={(v) => setShowInfoCard(v)}
-													show={!!item.image}
-													quantity={
-														(selectedProducts.some((obj) => obj._id === item._id) &&
-															selectedProducts?.find((obj) => obj._id === item._id)?.quantity) ||
-														0
-													}
-												/>
-											),
-									)}
-								</div>
-							</div>
-						)}
-						{hasImageItems && hasNonImageItems && <hr />}
-						{hasNonImageItems && (
-							<div className="itemContainer withoutImage">
-								<div>
-									{filteredProducts?.map((item, key) => (
+									{imageProducts.map((item) => (
 										<MenuCard
-											key={key}
+											key={String(item._id)}
 											item={item}
 											increaseQuantity={increaseProductQuantity}
 											decreaseQuantity={decreaseProductQuantity}
-											showInfo={item._id.toString() === showInfoCard.toString()}
-											setShowInfo={(v) => setShowInfoCard(v)}
-											show={!!item.image}
-											quantity={
-												(selectedProducts.some((obj) => obj._id === item._id) &&
-													selectedProducts?.find((obj) => obj._id === item._id)?.quantity) ||
-												0
-											}
+											showInfo={showInfoCardId === String(item._id)}
+											setShowInfo={(v) => setShowInfoCardId(v ? String(item._id) : "")}
+											show={true}
+											quantity={selectedQuantityMap.get(String(item._id)) || 0}
+										/>
+									))}
+								</div>
+							</div>
+						)}
+						{imageProducts.length > 0 && nonImageProducts.length > 0 && <hr />}
+						{nonImageProducts.length > 0 && (
+							<div className="itemContainer withoutImage">
+								<div>
+									{nonImageProducts.map((item) => (
+										<MenuCard
+											key={String(item._id)}
+											item={item}
+											increaseQuantity={increaseProductQuantity}
+											decreaseQuantity={decreaseProductQuantity}
+											showInfo={showInfoCardId === String(item._id)}
+											setShowInfo={(v) => setShowInfoCardId(v ? String(item._id) : "")}
+											show={true}
+											quantity={selectedQuantityMap.get(String(item._id)) || 0}
 										/>
 									))}
 								</div>

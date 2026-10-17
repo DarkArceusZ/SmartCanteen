@@ -10,6 +10,12 @@ export const useQueryParams = () => {
 	ref.current = current;
 
 	const get = useCallback((key: string) => ref.current.searchParams.get(key), []);
-	const set = useCallback((query: Record<string, string>) => router.replace(`${ref.current.pathname}?${createQueryString(ref.current.searchParams, query)}`), [router]);
+	const set = useCallback((query: Record<string, string>) => {
+		const newQuery = createQueryString(ref.current.searchParams, query);
+		const newUrl = newQuery ? `${ref.current.pathname}?${newQuery}` : ref.current.pathname;
+		if (typeof window !== "undefined") {
+			window.history.replaceState(null, "", newUrl);
+		}
+	}, []);
 	return useMemo(() => ({ pathname: current.pathname, router, get, set }), [current.pathname, router, get, set]);
 };

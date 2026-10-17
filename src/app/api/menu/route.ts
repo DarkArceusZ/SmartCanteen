@@ -21,12 +21,14 @@ export async function GET(req: Request) {
 		const account = await getRestaurantData(username);
 		if (!account) throw { status: 404, message: `Account with restaurant id: ${username} is not found` };
 
-		return NextResponse.json({
+		const response = NextResponse.json({
 			...omit(account, ["__v", "_id", "kitchens", "password", "profile", "menus", "tables"]),
 			profile: omit(account?.profile, ["__v", "_id"]),
 			menus: account?.menus.map((v: TMenu) => omit(v, ["__v"])),
 			tables: account?.tables.map((v: TTable) => omit(v, ["__v", "_id"])),
 		});
+		response.headers.set("Cache-Control", "public, s-maxage=15, stale-while-revalidate=59");
+		return response;
 	} catch (err) {
 		console.log(err);
 		return CatchNextResponse(err);
