@@ -35,20 +35,28 @@ const deleteData = async (ids: string[]) => {
 const createData = async (props: TDocumentData) => {
 	const { account, profile, menus, kitchens, tables } = props;
 	const start = performance.now();
-	const newAccount = await new Accounts(account).save();
+
 	const newProfile = await new Profiles(profile).save();
-	const [newMenus, newKitchen, newTables] = await Promise.all([
-		Promise.all(menus.map((m) => new Menus(m).save())),
-		Promise.all(kitchens.map((k) => new Kitchens(k).save())),
-		Promise.all(tables.map((t) => new Tables(t).save())),
-	]);
+
+	const [newKitchens, newTables] = await Promise.all([Promise.all(kitchens.map((k) => new Kitchens(k).save())), Promise.all(tables.map((t) => new Tables(t).save()))]);
+
+	const newAccount = await new Accounts({
+		...(account as object),
+		profile: newProfile._id,
+		kitchens: newKitchens.map((k) => k._id),
+		tables: newTables.map((t) => t._id),
+	}).save();
+
+	const newMenus = await Promise.all(menus.map((m) => new Menus(m).save()));
+
+	await Accounts.updateOne({ _id: newAccount._id }, { $set: { menus: newMenus.map((m) => m._id) } });
 
 	return {
 		processTime: (performance.now() - start) / 1000,
 		account: newAccount,
 		profile: newProfile,
 		menus: newMenus,
-		kitchens: newKitchen,
+		kitchens: newKitchens,
 		tables: newTables,
 	};
 };
