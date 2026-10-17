@@ -3,12 +3,10 @@
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Button, Lottie } from "xtreme-ui";
+import { Button } from "xtreme-ui";
 
 import { useOrder, useRestaurant } from "#components/context/useContext";
-import Collapsible from "#components/layout/Collapsible";
 import NoContent from "#components/layout/NoContent";
-import { getAnimSrc } from "#utils/constants/common";
 import type { TMenu } from "#utils/database/models/menu.js";
 import type { TProduct } from "#utils/database/models/order.js";
 
@@ -21,23 +19,29 @@ const CartPage = (props: TCartPageProps) => {
 	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder, setLoginOpen } = useOrder();
 	const session = useSession();
 
-	const [showOrderHistory, setShowOrderHistory] = useState(false);
 	const [selectionTotal, setSelectionTotal] = useState(0);
 	const [bottomBarActive, setBottomBarActive] = useState(false);
 	const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi">("cash");
 
-	const approvedProducts = order?.products?.reduce((acc, product) => (product.adminApproved ? acc + 1 : acc), 0) ?? 0;
+	const [viewReceipt, setViewReceipt] = useState(false);
 
 	useEffect(() => {
-		if (!selectedProducts.length) setShowOrderHistory(true);
-		else setShowOrderHistory(false);
-
 		setSelectionTotal(
 			selectedProducts.reduce((total, product) => {
 				return total + product.quantity * product.price;
 			}, 0),
 		);
 	}, [selectedProducts]);
+
+	useEffect(() => {
+		if (selectedProducts.length > 0 && !viewReceipt) {
+			props.setSideSheetHeading?.(["Your", "Cart"]);
+		} else if (order?.products?.length) {
+			props.setSideSheetHeading?.(["Digital", "Receipt"]);
+		} else {
+			props.setSideSheetHeading?.(["Your", "Cart"]);
+		}
+	}, [selectedProducts.length, order?.products?.length, viewReceipt, props]);
 
 	const onPlaceOrder = async () => {
 		if (selectedProducts.length === 0) return;
@@ -47,11 +51,13 @@ const CartPage = (props: TCartPageProps) => {
 		}
 		await placeOrder(selectedProducts, paymentMethod);
 		resetSelectedProducts();
+		setViewReceipt(true);
 	};
 
 	const onCancelOrder = async () => {
 		await cancelOrder();
 		resetSelectedProducts();
+		setViewReceipt(false);
 	};
 
 	// 1. If Order was REJECTED: Show rejection reason and allow "Start Another Order"
@@ -72,6 +78,7 @@ const CartPage = (props: TCartPageProps) => {
 						onClick={() => {
 							dismissCompletedOrder();
 							resetSelectedProducts();
+							setViewReceipt(false);
 						}}
 					/>
 				</div>
@@ -79,22 +86,99 @@ const CartPage = (props: TCartPageProps) => {
 		);
 	}
 
-	// 2. If Order is COMPLETE: Show Digital Receipt with Print & Order Again
-	if (order && order.state === "complete") {
-		const orderDate = new Date((order as unknown as { updatedAt: string }).updatedAt || new Date()).toLocaleString();
+	// 2. Empty Cart: No order placed and nothing selected
+	if (!selectedProducts.length && !order?.products?.length) {
 		return (
 			<div className="cartPage">
+				<NoContent label={"Aren't you hungry?"} animationName="FoodBurgerHappy" />
+			</div>
+		);
+	}
+
+	// 3. Digital Receipt: Rendered immediately after payment/order placement as per chosen method
+	if (order?.products?.length && (!selectedProducts.length || viewReceipt)) {
+		const orderDate = new Date(
+			(order as unknown as { createdAt?: string; updatedAt?: string }).createdAt || (order as unknown as { updatedAt?: string }).updatedAt || new Date(),
+		).toLocaleString();
+
+		const isCompleted = order.state === "complete";
+		const isReady = order.kitchenStatus === "ready";
+		const isPreparing = order.kitchenStatus === "preparing";
+		const isWaiting = !isCompleted && !isReady && !isPreparing;
+		const currentStep = isCompleted ? 4 : isReady ? 3 : isPreparing ? 2 : 1;
+
+		return (
+			<div className="cartPage">
+				{selectedProducts.length > 0 && (
+					<div className="backToCartBanner" onClick={() => setViewReceipt(false)}>
+						← Back to Current Cart Selection ({selectedProducts.length} items)
+					</div>
+				)}
+
 				<div className="digitalReceipt">
+					{/* Live Order & Kitchen Status Card */}
+					<div className={`receiptStatusCard ${isCompleted ? "statusCompleted" : isReady ? "statusReady" : isPreparing ? "statusPrep" : "statusWaiting"}`}>
+						<div className="statusHeaderTop">
+							<span className="statusIcon">{isCompleted ? "✓" : isReady ? "🔔" : isPreparing ? "🍳" : "⚡"}</span>
+							<div>
+								<h3>
+									{isCompleted
+										? "Order Completed & Served"
+										: isReady
+											? "Food Ready for Pickup!"
+											: isPreparing
+												? "Chef is Preparing Your Meal"
+												: "Payment Recorded • Order Placed"}
+								</h3>
+								<p>
+									{isCompleted
+										? "Thank you for dining with us! Hope to see you again soon."
+										: isReady
+											? `Table ${order.table} • Please collect your meal at the canteen counter`
+											: isPreparing
+												? `Table ${order.table} • Your food is being freshly prepared in the kitchen`
+												: `Table ${order.table} • Sent to canteen counter. Your order will be accepted shortly.`}
+								</p>
+							</div>
+						</div>
+
+						{/* Live 4-Step Progress Tracker */}
+						<div className="receiptTracker">
+							<div className={`trackerStep ${currentStep >= 1 ? "active" : ""}`}>
+								<div className="stepDot">{currentStep >= 1 ? "✓" : "1"}</div>
+								<span>Payment Done</span>
+							</div>
+							<div className={`trackerLine ${currentStep >= 2 ? "active" : ""}`} />
+							<div className={`trackerStep ${currentStep >= 2 ? "active" : ""}`}>
+								<div className="stepDot">{currentStep >= 2 ? "✓" : "2"}</div>
+								<span>Accepted</span>
+							</div>
+							<div className={`trackerLine ${currentStep >= 3 ? "active" : ""}`} />
+							<div className={`trackerStep ${currentStep >= 3 ? "active" : ""}`}>
+								<div className="stepDot">{currentStep >= 3 ? "✓" : "3"}</div>
+								<span>Preparing</span>
+							</div>
+							<div className={`trackerLine ${currentStep >= 4 ? "active" : ""}`} />
+							<div className={`trackerStep ${currentStep >= 4 ? "active" : ""}`}>
+								<div className="stepDot">{currentStep >= 4 ? "✓" : "4"}</div>
+								<span>Ready / Done</span>
+							</div>
+						</div>
+					</div>
+
+					{/* Official Receipt / Tax Invoice Header */}
 					<div className="receiptHeader">
-						<div className="checkIcon">✓</div>
-						<h2>Order Completed</h2>
-						<p className="canteenName">{restaurant?.profile?.name || "SmartCanteen"}</p>
+						<div className="canteenBrand">
+							<h2>{restaurant?.profile?.name || "Smart Canteen"}</h2>
+							<span className="taxInvoiceTag">Official Digital Receipt</span>
+						</div>
 						<p className="orderMeta">
-							Order #{order._id.toString().slice(-6).toUpperCase()} • Table {order.table}
+							<strong>Order #{order._id.toString().slice(-6).toUpperCase()}</strong> • Table {order.table}
 						</p>
 						<p className="orderTime">{orderDate}</p>
 					</div>
 
+					{/* Customer & Payment Breakdown */}
 					<div className="receiptDetails">
 						<div className="detailRow">
 							<span>Customer</span>
@@ -102,12 +186,25 @@ const CartPage = (props: TCartPageProps) => {
 								{order.customer?.fname} {order.customer?.lname || ""}
 							</strong>
 						</div>
+						{order.customer?.phone && (
+							<div className="detailRow">
+								<span>Phone</span>
+								<strong>{order.customer.phone}</strong>
+							</div>
+						)}
 						<div className="detailRow">
 							<span>Payment Method</span>
-							<strong>{order.paymentMethod === "upi" ? "📱 UPI at Counter" : "💵 Cash at Counter"}</strong>
+							<strong>{order.paymentMethod === "upi" ? "📱 Online Payment (UPI)" : "💵 Pay Cash at Counter"}</strong>
+						</div>
+						<div className="detailRow">
+							<span>Payment Status</span>
+							<strong className={order.paymentMethod === "upi" ? "upiPaidTag" : "cashPendingTag"}>
+								{order.paymentMethod === "upi" ? "✓ Paid via UPI (to Harshvardhansinh Gohil)" : `Pay ₹${order.orderTotal} at Counter`}
+							</strong>
 						</div>
 					</div>
 
+					{/* Itemized Order List */}
 					<div className="receiptItems">
 						<div className="itemsHeader">
 							<span>Item</span>
@@ -123,105 +220,54 @@ const CartPage = (props: TCartPageProps) => {
 						))}
 					</div>
 
+					{/* Totals */}
 					<div className="receiptTotals">
 						<div className="totRow">
 							<span>Subtotal</span>
 							<span>₹{order.orderTotal}</span>
 						</div>
-						<div className="totRow">
-							<span>Tax</span>
-							<span>₹{order.taxTotal}</span>
-						</div>
+						{Boolean(order.taxTotal) && (
+							<div className="totRow">
+								<span>Taxes & GST</span>
+								<span>₹{order.taxTotal}</span>
+							</div>
+						)}
 						<div className="totRow grandTotal">
 							<span>Grand Total</span>
-							<strong>₹{Number((order.orderTotal + order.taxTotal).toFixed(2))}</strong>
+							<strong>₹{Number((order.orderTotal + (order.taxTotal || 0)).toFixed(2))}</strong>
 						</div>
 					</div>
 
+					{/* Receipt Action Buttons */}
 					<div className="receiptActions">
-						<Button type="secondary" label="Print Receipt" onClick={() => window.print()} />
-						<Button
-							type="primary"
-							label="Start Another Order"
-							onClick={() => {
-								dismissCompletedOrder();
-								resetSelectedProducts();
-							}}
-						/>
+						<Button type="secondary" label="🖨️ Print Receipt" onClick={() => window.print()} />
+						{isCompleted ? (
+							<Button
+								type="primary"
+								label="Start Another Order"
+								onClick={() => {
+									dismissCompletedOrder();
+									resetSelectedProducts();
+									setViewReceipt(false);
+								}}
+							/>
+						) : isWaiting ? (
+							<Button type="secondaryDanger" label="Cancel Order" loading={cancelingOrder} onClick={onCancelOrder} />
+						) : null}
 					</div>
 				</div>
 			</div>
 		);
 	}
 
-	// 3. Cart is Empty: Show original NoContent
-	if (!selectedProducts.length && !order?.products?.length) {
-		return (
-			<div className="cartPage">
-				<NoContent label={"Aren't you hungry?"} animationName="FoodBurgerHappy" />
-			</div>
-		);
-	}
-
-	// 4. Order submitted and waiting for canteen acceptance
-	if (order?.products?.length && approvedProducts === 0 && !selectedProducts.length) {
-		return (
-			<div className="cartPage">
-				<div className="cartApproval">
-					<Lottie className="burgerLoader" src={getAnimSrc("FoodCook")} size={180} />
-					<div className="approvalHeading">
-						<p>Your order</p>
-						<p>will be accepted soon</p>
-					</div>
-
-					<div className="waitingOrderList">
-						<h4>Items in this order (Table {order.table})</h4>
-						{order.products.map((p, idx) => (
-							<div key={idx} className="waitingOrderItem">
-								<span className="qty">{p.quantity}x</span>
-								<span className="name">{p.name}</span>
-								<span className="price">₹{p.price * p.quantity}</span>
-							</div>
-						))}
-						<div className="waitingTotal">
-							<span>Order Total</span>
-							<strong>₹{order.orderTotal}</strong>
-						</div>
-					</div>
-
-					<Button className="endOrder" type="secondaryDanger" size="mini" label="Cancel Order" loading={cancelingOrder} onClick={onCancelOrder} />
-				</div>
-			</div>
-		);
-	}
-
-	// 5. Active Cart & Order View
+	// 4. Active Cart & Order View (when selectedProducts has items)
 	return (
 		<div className="cartPage">
 			<div className="cartItems">
-				{order?.kitchenStatus === "ready" && (
-					<div className="readyPickupBanner">
-						🔔 <strong>Table {order.table}</strong>: Your food is ready for pickup at the counter!
+				{order?.products?.length && (
+					<div className="viewActiveReceiptBanner" onClick={() => setViewReceipt(true)}>
+						🧾 View Active Order Receipt (#{order._id.toString().slice(-6).toUpperCase()})
 					</div>
-				)}
-				{order?.kitchenStatus === "preparing" && (
-					<div className="prepStatusBanner">
-						🍳 <strong>Table {order.table}</strong>: Chef is preparing your meal right now.
-					</div>
-				)}
-
-				{order?.products?.length && approvedProducts > 0 && (
-					<Collapsible
-						className="orderedProducts"
-						round
-						label={`Ordered Items (${order.products.length})`}
-						expand={showOrderHistory}
-						setExpand={setShowOrderHistory}
-						alert={order.products.length}>
-						{order.products.map((product, key) => (
-							<ItemCard key={key} item={product as unknown as TMenuCustom} staticCard />
-						))}
-					</Collapsible>
 				)}
 
 				{selectedProducts.length > 0 ? (

@@ -17,7 +17,7 @@ import "./orderPage.scss";
 
 const OrderPage = () => {
 	const session = useSession();
-	const { loading, loginOpen, setLoginOpen } = useOrder();
+	const { loading, loginOpen, setLoginOpen, order: activeOrder } = useOrder();
 	const { restaurant } = useRestaurant();
 
 	const menus = restaurant?.menus as Array<TMenuCustom>;
@@ -157,7 +157,7 @@ const OrderPage = () => {
 						<Button
 							icon="e43b"
 							iconType="solid"
-							label={`${selectedProducts?.length > 0 ? selectedProducts?.length : ""}`}
+							label={selectedProducts?.length > 0 ? `${selectedProducts.length}` : activeOrder?.products?.length ? "Receipt" : ""}
 							onClick={() => setSideSheetOpen(true)}
 						/>
 					</div>

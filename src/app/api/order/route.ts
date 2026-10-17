@@ -17,10 +17,23 @@ export async function GET() {
 
 		const restaurantID = session?.restaurant?.username;
 		const customer = session?.customer?._id;
-		const order = (await Orders.findOne({ restaurantID, customer, state: "active" })
+		let order = (await Orders.findOne({ restaurantID, customer, state: "active" })
 			.populate<{ customer: TCustomer }>("customer")
 			.populate<{ products: { product: TMenu }[] }>("products.product")
 			.lean()) as unknown as TOrder | null;
+
+		if (!order) {
+			order = (await Orders.findOne({
+				restaurantID,
+				customer,
+				state: { $in: ["complete", "reject"] },
+				updatedAt: { $gte: new Date(Date.now() - 30 * 60 * 1000) },
+			})
+				.sort({ updatedAt: -1 })
+				.populate<{ customer: TCustomer }>("customer")
+				.populate<{ products: { product: TMenu }[] }>("products.product")
+				.lean()) as unknown as TOrder | null;
+		}
 
 		let formattedOrder: unknown = order;
 
