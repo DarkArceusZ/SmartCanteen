@@ -21,4 +21,6 @@ services:
         value: "true"
       - key: MONGODB_URI
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
 
