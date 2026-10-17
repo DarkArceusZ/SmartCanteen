@@ -24,10 +24,7 @@ export const platformConfigs: IPlatformConfig[] = [
 		platform: "groq",
 		url: "https://api.groq.com/openai/v1",
 		defaultModel: process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b",
-		getApiKey: () =>
-			process.env.GROQ_API_KEY?.trim() ||
-			process.env.GROK_API_KEY?.trim() ||
-			process.env.AI_GROQ_KEY?.trim(),
+		getApiKey: () => process.env.GROQ_API_KEY?.trim() || process.env.GROK_API_KEY?.trim() || process.env.AI_GROQ_KEY?.trim(),
 	},
 	{
 		platform: "openai",

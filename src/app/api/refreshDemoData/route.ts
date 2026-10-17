@@ -39,10 +39,7 @@ const createData = async (props: TDocumentData) => {
 	const newAccount = await new Accounts(account).save();
 	const newProfile = await new Profiles(profile).save();
 
-	const [newKitchens, newTables] = await Promise.all([
-		Promise.all(kitchens.map((k) => new Kitchens(k).save())),
-		Promise.all(tables.map((t) => new Tables(t).save())),
-	]);
+	const [newKitchens, newTables] = await Promise.all([Promise.all(kitchens.map((k) => new Kitchens(k).save())), Promise.all(tables.map((t) => new Tables(t).save()))]);
 
 	const newMenus = await Promise.all(menus.map((m) => new Menus(m).save()));
 
