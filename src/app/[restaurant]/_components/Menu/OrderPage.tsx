@@ -134,7 +134,14 @@ const OrderPage = () => {
 	}, [session]);
 
 	useEffect(() => {
-		if (session.data?.role === "customer" && restaurant?.username && session.data?.restaurant?.username !== restaurant?.username) signOut();
+		if (
+			session.data?.role === "customer" &&
+			restaurant?.username &&
+			session.data?.restaurant?.username &&
+			session.data.restaurant.username.toLowerCase() !== restaurant.username.toLowerCase()
+		) {
+			signOut({ redirect: false });
+		}
 	}, [restaurant?.username, session.data?.restaurant?.username, session.data?.role]);
 
 	return (

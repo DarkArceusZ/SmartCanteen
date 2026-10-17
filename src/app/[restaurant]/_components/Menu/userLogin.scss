@@ -38,6 +38,22 @@
 		align-items: center;
 		transition: all var(--userLoginDuration) ease-out;
 
+		&.directContent {
+			height: auto;
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			margin: 16px 0;
+
+			.nameInput,
+			.phoneInput {
+				position: static;
+				width: 100%;
+				opacity: 1;
+				transform: none;
+			}
+		}
+
 		> .phone, .name {
 			position: absolute;
 			width: 100%;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { Customers } from "#utils/database/models/customer";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
@@ -9,18 +10,47 @@ import { CatchNextResponse } from "#utils/helper/common";
 
 export async function POST(req: Request) {
 	try {
+		await connectDB();
+		const body = await req.json();
 		const session = await getServerSession(authOptions);
-		if (!session || session.role !== "customer" || !session.customer?._id || !session.restaurant?.username) {
-			throw { status: 401, message: "Customer authentication and table session required" };
+
+		let customer = session?.customer?._id;
+		let restaurantID = session?.restaurant?.username?.toLowerCase() || body?.restaurantID?.toLowerCase();
+		const table = (body?.table || session?.restaurant?.table || "1").toLowerCase();
+
+		// If customer is not authenticated via session, allow name & phone from request body
+		if (!customer && (body?.phone || body?.fname || body?.name)) {
+			const cleanPhone = (body.phone || "").trim();
+			const cleanName = (body.fname || body.name || "Customer").trim();
+
+			if (!cleanPhone) throw { status: 400, message: "Phone number is required to place an order" };
+
+			let customerDoc = await Customers.findOne({ phone: cleanPhone });
+			if (!customerDoc) {
+				customerDoc = await new Customers({ fname: cleanName, lname: "", phone: cleanPhone }).save();
+			} else if (cleanName && customerDoc.fname !== cleanName) {
+				customerDoc.fname = cleanName;
+				await customerDoc.save();
+			}
+			customer = customerDoc._id;
 		}
 
-		const body = await req.json();
+		if (!customer) {
+			throw { status: 401, message: "Please enter your name and phone number to place your order" };
+		}
+
 		if (!body?.products || !Array.isArray(body.products) || body.products.length === 0) {
 			throw { status: 400, message: "Can't place order on empty cart" };
 		}
 
-		await connectDB();
-		const restaurantID = session.restaurant.username.toLowerCase();
+		// Fallback restaurantID from the first menu item if missing
+		if (!restaurantID && body.products[0]?._id) {
+			const firstItem = await Menus.findById<TMenu>(body.products[0]._id).lean();
+			if (firstItem?.restaurantID) restaurantID = firstItem.restaurantID.toLowerCase();
+		}
+		if (!restaurantID) {
+			throw { status: 400, message: "Canteen identifier is required" };
+		}
 
 		const validatedProducts: TProduct[] = await Promise.all(
 			body.products.map(async (item: { _id?: string; quantity?: number }) => {
@@ -57,8 +87,6 @@ export async function POST(req: Request) {
 			}),
 		);
 
-		const table = (session.restaurant.table || "1").toLowerCase();
-		const customer = session.customer._id;
 		const paymentMethod = body?.paymentMethod === "upi" ? "upi" : "cash";
 
 		const existingOrder = await Orders.findOne<TOrder>({ restaurantID, table, customer, state: "active" });

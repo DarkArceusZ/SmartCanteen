@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Button, Lottie } from "xtreme-ui";
 
@@ -18,8 +17,6 @@ import "./cartPage.scss";
 
 const CartPage = (props: TCartPageProps) => {
 	const { selectedProducts, increaseProductQuantity, decreaseProductQuantity, resetSelectedProducts } = props;
-	const params = useSearchParams();
-	const table = params.get("table");
 	const { restaurant } = useRestaurant();
 	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder, setLoginOpen } = useOrder();
 	const session = useSession();
@@ -41,15 +38,6 @@ const CartPage = (props: TCartPageProps) => {
 			}, 0),
 		);
 	}, [selectedProducts]);
-
-	useEffect(() => {
-		const cancelAndSignout = async () => {
-			await cancelOrder();
-			signOut();
-		};
-
-		if (order?.table && order?.table !== table) cancelAndSignout();
-	}, [cancelOrder, order, table]);
 
 	const onPlaceOrder = async () => {
 		if (selectedProducts.length === 0) return;

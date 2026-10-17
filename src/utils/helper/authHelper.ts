@@ -78,43 +78,32 @@ export const authOptions: AuthOptions = {
 				restaurant: { label: "Restaurant Username", type: "text", placeholder: "Enter restaurant username" },
 				table: { label: "Table ID", type: "string", placeholder: "Enter the table id" },
 				phone: { label: "Phone Number", type: "number", placeholder: "Enter your phone number" },
-				fname: { label: "Name", type: "text", placeholder: "Enter your first name" },
-				lname: { label: "Name", type: "text", placeholder: "Enter your last name" },
+				fname: { label: "Name", type: "text", placeholder: "Enter your name" },
 			},
 			async authorize(cred) {
 				if (!cred?.restaurant) throw new Error("Restaurant id is required");
-				if (!cred?.table) throw new Error("Table id is required");
-				if (!cred?.fname) throw new Error("First name is required");
+				if (!cred?.fname) throw new Error("Name is required");
 				if (!cred?.phone) throw new Error("Phone number is required");
 
 				await connectDB();
 				const cleanRestaurant = cred.restaurant.trim().toLowerCase();
 				const customerCred = {
 					fname: cred.fname.trim(),
-					lname: cred?.lname?.trim() || "",
+					lname: "",
 					phone: cred.phone.trim(),
 				};
 
 				let customer = await Customers.findOne({ phone: customerCred.phone });
 				if (!customer) customer = await new Customers(customerCred).save();
+				else if (customer.fname !== customerCred.fname) {
+					customer.fname = customerCred.fname;
+					await customer.save();
+				}
 
 				const account = await Accounts.findOne<TAccount>({ username: cleanRestaurant }).populate("profile").populate("tables");
 				if (!account) throw new Error("Restaurant not found.");
 
-				const normTable = (s?: string) =>
-					(s || "")
-						.toLowerCase()
-						.replace(/[^a-z0-9]/g, "")
-						.replace(/^table/, "")
-						.replace(/^0+/, "") || "0";
-				const inputNorm = normTable(cred?.table);
-
-				const isTableMatch = (t: { username: string; name?: string }) => {
-					return normTable(t.username) === inputNorm || normTable(t.name) === inputNorm;
-				};
-
-				const matchedTable = account?.tables?.find(isTableMatch);
-				if (!matchedTable) throw new Error("Invalid table id");
+				const tableUsername = cred?.table || account?.tables?.[0]?.username || "1";
 
 				return {
 					id: customer._id.toString(),
@@ -126,7 +115,7 @@ export const authOptions: AuthOptions = {
 						customer: customer.toObject ? customer.toObject() : customer,
 						restaurant: {
 							username: account?.profile?.restaurantID || account.username,
-							table: matchedTable.username,
+							table: tableUsername,
 							name: account?.profile?.name,
 							avatar: account?.profile?.avatar,
 						},
