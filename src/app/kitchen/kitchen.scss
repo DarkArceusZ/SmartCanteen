@@ -1,0 +1,493 @@
+.kdsWrapper {
+	width: 100vw;
+	min-height: 100vh;
+	background: #0b0e14;
+	color: #f1f5f9;
+	display: flex;
+	flex-direction: column;
+	font-family: inherit;
+
+	.kdsNavbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 28px;
+		background: #141824;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+		flex-wrap: wrap;
+		gap: 16px;
+
+		.leftMeta {
+			display: flex;
+			align-items: center;
+			gap: 20px;
+
+			.livePulse {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+
+				.pulseCircle {
+					width: 12px;
+					height: 12px;
+					border-radius: 50%;
+					background: #10b981;
+					box-shadow: 0 0 10px #10b981;
+					animation: pulseAnim 2s infinite;
+				}
+
+				h1 {
+					font-size: 1.25rem;
+					font-weight: 700;
+					margin: 0;
+					color: #f8fafc;
+					letter-spacing: -0.02em;
+				}
+			}
+
+			.clockDisplay {
+				background: rgba(255, 255, 255, 0.06);
+				padding: 6px 14px;
+				border-radius: 8px;
+				font-size: 0.95rem;
+				font-weight: 600;
+				color: #94a3b8;
+				font-variant-numeric: tabular-nums;
+			}
+		}
+
+		.rightControls {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+
+			.syncTag {
+				font-size: 0.85rem;
+				color: #10b981;
+				background: rgba(16, 185, 129, 0.1);
+				padding: 6px 12px;
+				border-radius: 20px;
+				font-weight: 500;
+			}
+
+			.kdsNavBtn {
+				background: rgba(255, 255, 255, 0.08);
+				color: #f1f5f9;
+				padding: 8px 16px;
+				border-radius: 8px;
+				font-size: 0.88rem;
+				font-weight: 500;
+				text-decoration: none;
+				border: none;
+				cursor: pointer;
+				transition: all 0.2s;
+
+				&:hover {
+					background: rgba(255, 255, 255, 0.16);
+				}
+
+				&.signout {
+					background: transparent;
+					border: 1px solid rgba(239, 68, 68, 0.3);
+					color: #ef4444;
+
+					&:hover {
+						background: #ef4444;
+						color: #ffffff;
+					}
+				}
+			}
+		}
+	}
+
+	.kdsMobileTabs {
+		display: none;
+		padding: 12px 16px;
+		background: #141824;
+		gap: 8px;
+		overflow-x: auto;
+
+		button {
+			background: rgba(255, 255, 255, 0.06);
+			border: none;
+			color: #94a3b8;
+			padding: 8px 16px;
+			border-radius: 8px;
+			font-size: 0.88rem;
+			font-weight: 600;
+			cursor: pointer;
+			white-space: nowrap;
+
+			&.active {
+				background: #2563eb;
+				color: #ffffff;
+			}
+		}
+	}
+
+	.kanbanGrid {
+		flex: 1;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 24px;
+		padding: 24px 28px;
+		overflow-x: auto;
+
+		.kanbanCol {
+			background: #141824;
+			border: 1px solid rgba(255, 255, 255, 0.06);
+			border-radius: 14px;
+			display: flex;
+			flex-direction: column;
+			max-height: calc(100vh - 120px);
+
+			.colHeader {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 18px 20px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+				.colTitle {
+					display: flex;
+					align-items: center;
+					gap: 10px;
+
+					.colDot {
+						width: 10px;
+						height: 10px;
+						border-radius: 50%;
+
+						&.newDot { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+						&.prepDot { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+						&.readyDot { background: #10b981; box-shadow: 0 0 8px #10b981; }
+					}
+
+					h2 {
+						font-size: 1.1rem;
+						font-weight: 700;
+						margin: 0;
+						color: #f1f5f9;
+					}
+				}
+
+				.colBadge {
+					background: rgba(255, 255, 255, 0.1);
+					color: #f1f5f9;
+					padding: 4px 10px;
+					border-radius: 12px;
+					font-size: 0.82rem;
+					font-weight: 700;
+				}
+			}
+
+			.cardsContainer {
+				flex: 1;
+				padding: 16px;
+				overflow-y: auto;
+				display: flex;
+				flex-direction: column;
+				gap: 16px;
+
+				.colEmpty {
+					text-align: center;
+					padding: 40px 16px;
+					color: #64748b;
+					font-size: 0.95rem;
+				}
+
+				.kdsCard {
+					background: #1c2233;
+					border: 1px solid rgba(255, 255, 255, 0.08);
+					border-radius: 12px;
+					padding: 16px;
+					display: flex;
+					flex-direction: column;
+					gap: 12px;
+					transition: transform 0.15s, box-shadow 0.15s;
+
+					&:hover {
+						transform: translateY(-2px);
+						box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+					}
+
+					&.lane-new {
+						border-left: 4px solid #f59e0b;
+					}
+
+					&.lane-preparing {
+						border-left: 4px solid #3b82f6;
+					}
+
+					&.lane-ready {
+						border-left: 4px solid #10b981;
+						background: #152427;
+					}
+
+					.cardTop {
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+
+						.tablePill {
+							background: #2563eb;
+							color: #ffffff;
+							font-weight: 800;
+							font-size: 0.85rem;
+							letter-spacing: 0.04em;
+							padding: 4px 10px;
+							border-radius: 6px;
+						}
+
+						.elapsedPill {
+							font-size: 0.82rem;
+							color: #94a3b8;
+							font-variant-numeric: tabular-nums;
+						}
+					}
+
+					.customerRow {
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						padding-bottom: 8px;
+						border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+
+						.name {
+							font-size: 0.9rem;
+							font-weight: 600;
+							color: #e2e8f0;
+						}
+
+						.paymentBadge {
+							font-size: 0.78rem;
+							padding: 2px 8px;
+							border-radius: 6px;
+							font-weight: 600;
+
+							&.cash {
+								background: rgba(245, 158, 11, 0.15);
+								color: #fbbf24;
+							}
+
+							&.upi {
+								background: rgba(59, 130, 246, 0.15);
+								color: #60a5fa;
+							}
+						}
+					}
+
+					.itemsBox {
+						display: flex;
+						flex-direction: column;
+						gap: 6px;
+
+						.itemRow {
+							display: flex;
+							align-items: center;
+							gap: 8px;
+							background: rgba(255, 255, 255, 0.03);
+							padding: 6px 10px;
+							border-radius: 6px;
+
+							.qty {
+								font-weight: 700;
+								color: #f59e0b;
+								font-size: 0.92rem;
+								min-width: 22px;
+							}
+
+							.itemTitle {
+								font-size: 0.9rem;
+								color: #f1f5f9;
+							}
+						}
+					}
+
+					.cardButtons {
+						display: flex;
+						gap: 8px;
+						margin-top: 4px;
+
+						button {
+							border-radius: 8px;
+							font-size: 0.88rem;
+							font-weight: 600;
+							cursor: pointer;
+							border: none;
+							padding: 10px 14px;
+							transition: all 0.15s;
+
+							&:disabled {
+								opacity: 0.5;
+								cursor: not-allowed;
+							}
+						}
+
+						.btnAction {
+							flex: 1;
+
+							&.prepareBtn {
+								background: #3b82f6;
+								color: #ffffff;
+
+								&:hover:not(:disabled) {
+									background: #2563eb;
+								}
+							}
+
+							&.readyBtn {
+								background: #10b981;
+								color: #ffffff;
+								box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+
+								&:hover:not(:disabled) {
+									background: #059669;
+								}
+							}
+
+							&.completeBtn {
+								background: #2563eb;
+								color: #ffffff;
+
+								&:hover:not(:disabled) {
+									background: #1d4ed8;
+								}
+							}
+						}
+
+						.btnCancel {
+							background: transparent;
+							border: 1px solid rgba(255, 255, 255, 0.15);
+							color: #94a3b8;
+							font-size: 0.8rem;
+							padding: 8px 12px;
+
+							&:hover:not(:disabled) {
+								border-color: #ef4444;
+								color: #ef4444;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/* Modal Overlay */
+	.modalOverlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.7);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+
+		.modalCard {
+			background: #181c27;
+			border: 1px solid rgba(255, 255, 255, 0.12);
+			border-radius: 14px;
+			padding: 24px;
+			max-width: 440px;
+			width: 90%;
+			box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+
+			h3 {
+				margin: 0 0 10px;
+				font-size: 1.2rem;
+				color: #f8fafc;
+			}
+
+			p {
+				color: #94a3b8;
+				font-size: 0.92rem;
+				margin: 0 0 16px;
+				line-height: 1.4;
+			}
+
+			.reasonField {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				margin-bottom: 20px;
+
+				label {
+					font-size: 0.82rem;
+					color: #cbd5e1;
+				}
+
+				input {
+					background: #0f1117;
+					border: 1px solid rgba(255, 255, 255, 0.15);
+					border-radius: 8px;
+					padding: 10px 14px;
+					color: #f1f5f9;
+					font-size: 0.9rem;
+					outline: none;
+
+					&:focus {
+						border-color: #3b82f6;
+					}
+				}
+			}
+
+			.modalButtons {
+				display: flex;
+				justify-content: flex-end;
+				gap: 12px;
+
+				button {
+					padding: 9px 18px;
+					border-radius: 8px;
+					font-size: 0.9rem;
+					font-weight: 600;
+					cursor: pointer;
+					border: none;
+				}
+
+				.btnModalCancel {
+					background: rgba(255, 255, 255, 0.08);
+					color: #f1f5f9;
+
+					&:hover {
+						background: rgba(255, 255, 255, 0.15);
+					}
+				}
+
+				.btnModalConfirm {
+					background: #ef4444;
+					color: #ffffff;
+
+					&:hover {
+						background: #dc2626;
+					}
+				}
+			}
+		}
+	}
+}
+
+@keyframes pulseAnim {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+@media (max-width: 900px) {
+	.kdsWrapper {
+		.kdsMobileTabs {
+			display: flex;
+		}
+
+		.kanbanGrid {
+			grid-template-columns: 1fr;
+			padding: 16px;
+			gap: 16px;
+
+			.kanbanCol {
+				max-height: none;
+			}
+		}
+	}
+}

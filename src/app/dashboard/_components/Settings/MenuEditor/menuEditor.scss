@@ -1,0 +1,141 @@
+@use '../../../../../components/base/menuCategory';
+
+.menuEditor {
+	position: relative;
+	width: 100%;
+	padding: 15px 0;
+	display: flex;
+	flex-direction: column;
+
+	.menuCategoryEditor {
+		position: relative;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+
+		.menuCategoryHeader {
+			width: 100%;
+			padding: 0 35px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+
+			.menuCategoryHeading {
+				color: var(--colorContentPrimary);
+				font-size: 24px;
+				font-variation-settings: 'wdth' 75, 'wght' 300;
+				margin: 0 40px 0 0;
+				overflow: hidden;
+				user-select: none;
+				white-space: nowrap;
+				transition: all 0.2s ease-out;
+			}
+		}
+
+		.menuCategoryContainer {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 20px 35px;
+			scroll-behavior: smooth;
+			overflow-x: auto;
+			scrollbar-width: none;
+			-webkit-overflow-scrolling: touch;
+
+			&::-webkit-scrollbar { 
+				display: none;
+			}
+		}
+	}
+
+	.menuItemEditor {
+		width: 100%;
+		margin-top: 15px;
+
+		.menuItemHeader {
+			width: 100%;
+			padding: 0 35px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+
+			.menuItemHeading {
+				color: var(--colorContentPrimary);
+				font-size: 24px;
+				font-variation-settings: 'wdth' 75, 'wght' 300;
+				margin: 0 40px 0 0;
+				overflow: hidden;
+				user-select: none;
+				white-space: nowrap;
+			}
+		}
+
+		.menuItemContainer {
+			--menuItemSize: 200px;
+
+			padding: 30px 40px 55px;
+		}
+	}
+
+	.menuEditorAdd {
+		position: fixed;
+		bottom: 20px; right: 20px;
+		display: flex;
+		z-index: 10;
+		transition: all 0.2s ease-out;
+
+		&.active {
+			transform: scale(0);
+		}
+	}
+}
+
+@media (width <= 750px) {
+	.menuEditor {
+		.menuCategoryEditor {
+			.menuCategoryContainer {
+				padding: 30px;
+			}
+		}
+
+		.menuItemEditor {
+			.menuItemContainer {
+				--menuItemSize: 160px;
+				padding: 30px 30px 55px;
+			}
+		}
+
+		.menuEditorAdd {
+			bottom: 80px;
+		}
+	}
+}
+
+@media (width <= 530px) {
+	.menuEditor {
+		padding: 10px 0;
+
+		.menuCategoryEditor {
+			.menuCategoryHeader {
+				padding: 0 30px;
+			}
+
+			.menuCategoryContainer {
+				padding: 30px;
+			}
+
+			.scrollLeft, .scrollRight {
+				bottom: 27px;
+			}
+		}
+
+		.menuItemEditor {
+			.menuItemContainer {
+				--menuItemSize: 130px;
+
+				padding: 30px 20px 55px;
+			}
+		}
+	}
+}

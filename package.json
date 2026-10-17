@@ -1,0 +1,49 @@
+{
+	"name": "smartcanteen-ai",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"db": "node scripts/start-db.mjs",
+		"play": "next dev",
+		"dev": "doppler run --command=\"PORT=3050 next dev\"",
+		"build:dev": "doppler run --command=\"next build\"",
+		"build": "next build",
+		"start": "next start",
+		"test": "node --test tests/*.test.mjs",
+		"lint": "biome check --write",
+		"clean": "rm -rf node_modules pnpm-lock.yaml .next && pnpm install",
+		"zip": "tar -a -c -f ../SmartCanteen_DeployReady.zip --exclude=\"node_modules\" --exclude=\".next\" --exclude=\".db-data\" --exclude=\".git\" * .env.example .env.local"
+	},
+	"dependencies": {
+		"@ai-sdk/openai-compatible": "^2.0.24",
+		"@react-pdf/renderer": "^4.3.2",
+		"@yudiel/react-qr-scanner": "^2.1.0",
+		"ai": "^6.0.57",
+		"bcrypt": "^6.0.0",
+		"clsx": "^2.1.1",
+		"lodash": "^4.17.23",
+		"mongoose": "^9.1.5",
+		"next": "16.1.6",
+		"next-auth": "^4.24.13",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
+		"react-intersection-observer": "^10.0.2",
+		"react-toastify": "^11.0.5",
+		"sass": "^1.97.3",
+		"swr": "^2.3.8",
+		"xtreme-ui": "^0.0.127",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.13",
+		"@svgr/webpack": "^8.1.0",
+		"@types/bcrypt": "^6.0.0",
+		"@types/lodash": "^4.17.23",
+		"@types/node": "25.0.10",
+		"@types/react": "19.2.10",
+		"@types/react-dom": "19.2.3",
+		"mongodb-memory-server": "^11.3.0",
+		"typescript": "5.9.3",
+		"ultracite": "7.1.1"
+	}
+}

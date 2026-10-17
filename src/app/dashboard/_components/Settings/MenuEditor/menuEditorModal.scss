@@ -1,0 +1,114 @@
+.menuEditorModalCard {
+	padding: 24px;
+	width: 100%;
+	max-width: 520px;
+	box-sizing: border-box;
+
+	.modalHeading {
+		font-size: 22px;
+		font-weight: 600;
+		color: var(--colorContentPrimary);
+		margin: 0 0 4px 0;
+	}
+
+	.modalSubheading {
+		font-size: 13px;
+		color: var(--colorContentSecondary);
+		margin: 0 0 20px 0;
+	}
+
+	.formGrid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 14px;
+		margin-bottom: 24px;
+
+		.formGroup {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+
+			&.full {
+				width: 100%;
+			}
+
+			&.half {
+				width: calc(50% - 7px);
+
+				@media (max-width: 600px) {
+					width: 100%;
+				}
+			}
+
+			label {
+				font-size: 12px;
+				font-weight: 500;
+				color: var(--colorContentSecondary);
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+
+			.selectInput {
+				width: 100%;
+				padding: 10px 12px;
+				font-size: 14px;
+				border-radius: 8px;
+				background-color: var(--colorBackgroundSurface, #1a1a1a);
+				color: var(--colorContentPrimary, #ffffff);
+				border: 1px solid var(--colorBorderPrimary, rgba(255, 255, 255, 0.1));
+				outline: none;
+				transition: border-color 0.2s;
+
+				&:focus {
+					border-color: hsl(var(--colorBrandPrimary));
+				}
+			}
+
+			&.checkboxRow {
+				margin-top: 4px;
+
+				.checkboxLabel {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					font-size: 13px;
+					text-transform: none;
+					cursor: pointer;
+					color: var(--colorContentPrimary);
+
+					input[type="checkbox"] {
+						width: 16px;
+						height: 16px;
+						accent-color: hsl(var(--colorBrandPrimary));
+						cursor: pointer;
+					}
+				}
+			}
+		}
+	}
+
+	.modalActions {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
+		border-top: 1px solid var(--colorBorderPrimary, rgba(255, 255, 255, 0.08));
+		padding-top: 16px;
+
+		.rightButtons {
+			display: flex;
+			gap: 10px;
+			margin-left: auto;
+		}
+
+		.btnDelete {
+			button {
+				color: #ef4444 !important;
+				border-color: rgba(239, 68, 68, 0.3) !important;
+				&:hover {
+					background-color: rgba(239, 68, 68, 0.1) !important;
+				}
+			}
+		}
+	}
+}

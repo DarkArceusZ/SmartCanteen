@@ -1,0 +1,261 @@
+.contactPage {
+	position: relative;
+	isolation: isolate;
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	overflow-y: auto;
+	padding: clamp(110px, 14vh, 170px) clamp(24px, 7vw, 120px) 90px;
+	background:
+		radial-gradient(circle at 50% 0%, hsl(var(--colorBrandPrimary) / 0.18), transparent 38%),
+		linear-gradient(145deg, var(--colorBackgroundSecondary), var(--colorBackgroundPrimary));
+	color: rgb(214 220 215 / 82%);
+
+	&::before {
+		position: absolute;
+		top: 8%;
+		left: 50%;
+		width: min(70vw, 620px);
+		height: 220px;
+		border-radius: 50%;
+		background: hsl(var(--colorBrandPrimary) / 0.08);
+		content: "";
+		filter: blur(70px);
+		pointer-events: none;
+		transform: translateX(-50%);
+		animation: contactGlow 8s ease-in-out infinite alternate;
+		z-index: -1;
+	}
+
+	&.contactPageLoading {
+		display: grid;
+		place-items: center;
+		color: var(--colorTextSecondary);
+		font-size: 18px;
+	}
+
+	.contactIntro {
+		max-width: 720px;
+		margin: 0 auto 44px;
+		text-align: center;
+		position: relative;
+		animation: contactReveal 0.7s ease-out both;
+
+		.eyebrow {
+			margin: 0 0 10px;
+			color: hsl(var(--colorBrandPrimary) / 0.95);
+			font-size: 14px;
+			font-variation-settings: 'wdth' 85, 'wght' 600;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			text-shadow: 0 0 18px hsl(var(--colorBrandPrimary) / 0.55);
+		}
+
+		h1 {
+			margin: 0;
+			color: rgb(246 248 246 / 94%);
+			font-size: clamp(38px, 5vw, 64px);
+			font-variation-settings: 'wdth' 75, 'wght' 500;
+
+			span {
+				color: rgb(205 214 208 / 84%);
+				font-variation-settings: 'wdth' 75, 'wght' 300;
+			}
+		}
+
+		.introText {
+			max-width: 540px;
+			margin: 18px auto 0;
+			color: rgb(218 226 220 / 78%);
+			font-size: 16px;
+			line-height: 1.7;
+		}
+	}
+
+	.contactCards {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 20px;
+		max-width: 980px;
+		margin: 0 auto;
+	}
+
+	.contactCard {
+		display: flex;
+		gap: 18px;
+		align-items: flex-start;
+		min-height: 150px;
+		box-sizing: border-box;
+		padding: 26px;
+		border: 1px solid hsl(var(--colorBrandPrimary) / 0.3);
+		border-radius: 24px;
+		background: linear-gradient(145deg, hsl(var(--colorBrandPrimary) / 0.14), hsl(var(--colorBackgroundPrimary) / 0.96) 58%);
+		color: inherit;
+		text-decoration: none;
+		transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		animation: contactCardReveal 0.6s ease-out both;
+
+		&:nth-child(1) {
+			animation-delay: 0.08s;
+		}
+
+		&:nth-child(2) {
+			animation-delay: 0.16s;
+		}
+
+		&:nth-child(3) {
+			animation-delay: 0.24s;
+		}
+
+		&:nth-child(4) {
+			animation-delay: 0.32s;
+		}
+
+		&:hover,
+		&:focus-visible {
+			border-color: hsl(var(--colorBrandPrimary) / 0.7);
+			box-shadow: 0 10px 30px hsl(var(--colorBrandPrimary) / 0.12);
+			outline: none;
+			transform: translateY(-3px);
+		}
+
+		.contactIcon {
+			display: grid;
+			flex: 0 0 50px;
+			width: 50px;
+			height: 50px;
+			place-items: center;
+			border-radius: 50%;
+			background: linear-gradient(145deg, hsl(var(--colorBrandPrimary)), hsl(var(--colorBrandPrimary) / 0.72));
+			color: var(--colorBackgroundPrimary);
+			font-size: 20px;
+			box-shadow: 0 0 20px hsl(var(--colorBrandPrimary) / 0.22);
+			animation: iconPulse 1.1s ease-out 0.5s both;
+		}
+
+		.cardLabel {
+			margin: 0 0 5px;
+			color: hsl(var(--colorBrandPrimary));
+			font-size: 12px;
+			font-variation-settings: 'wdth' 85, 'wght' 600;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+		}
+
+		h2 {
+			margin: 0 0 8px;
+			color: rgb(241 245 241 / 90%);
+			font-size: 22px;
+			font-variation-settings: 'wdth' 80, 'wght' 500;
+		}
+
+		p:not(.cardLabel) {
+			margin: 0;
+			color: rgb(205 214 208 / 76%);
+			font-size: 14px;
+			line-height: 1.6;
+		}
+
+		.cardAction {
+			display: inline-block;
+			margin-top: 12px;
+			color: hsl(var(--colorBrandPrimary));
+			font-size: 13px;
+			font-variation-settings: 'wdth' 85, 'wght' 600;
+
+			&::after {
+				margin-left: 6px;
+				content: "↗";
+				font-size: 15px;
+			}
+		}
+	}
+
+	.hoursCard {
+		cursor: default;
+
+		.cardAction::after {
+			content: none;
+		}
+	}
+}
+
+@keyframes contactReveal {
+	from {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes contactCardReveal {
+	from {
+		opacity: 0;
+		transform: translateY(18px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes iconPulse {
+	0% {
+		box-shadow: 0 0 0 0 hsl(var(--colorBrandPrimary) / 0.4);
+	}
+
+	100% {
+		box-shadow: 0 0 0 12px hsl(var(--colorBrandPrimary) / 0);
+	}
+}
+
+@keyframes contactGlow {
+	from {
+		opacity: 0.65;
+		transform: translateX(-50%) scale(0.95);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(-50%) scale(1.05);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.contactPage::before,
+	.contactPage .contactIntro,
+	.contactPage .contactCard,
+	.contactPage .contactIcon {
+		animation: none;
+	}
+}
+
+@media (width <= 650px) {
+	.contactPage {
+		padding: 95px 18px 90px;
+
+		.contactIntro {
+			margin-bottom: 30px;
+
+			.introText {
+				font-size: 14px;
+			}
+		}
+
+		.contactCards {
+			grid-template-columns: 1fr;
+			gap: 14px;
+		}
+
+		.contactCard {
+			min-height: 126px;
+			padding: 20px;
+			border-radius: 20px;
+		}
+	}
+}

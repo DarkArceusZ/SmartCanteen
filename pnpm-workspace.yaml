@@ -1,0 +1,6 @@
+allowBuilds:
+  '@parcel/watcher': true
+  bcrypt: true
+  es5-ext: true
+  mongodb-memory-server: true
+  sharp: true
