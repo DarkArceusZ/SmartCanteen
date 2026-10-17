@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Button, Lottie } from "xtreme-ui";
 
@@ -21,7 +21,8 @@ const CartPage = (props: TCartPageProps) => {
 	const params = useSearchParams();
 	const table = params.get("table");
 	const { restaurant } = useRestaurant();
-	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder } = useOrder();
+	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder, setLoginOpen } = useOrder();
+	const session = useSession();
 
 	const [showOrderHistory, setShowOrderHistory] = useState(false);
 	const [selectionTotal, setSelectionTotal] = useState(0);
@@ -52,6 +53,10 @@ const CartPage = (props: TCartPageProps) => {
 
 	const onPlaceOrder = async () => {
 		if (selectedProducts.length === 0) return;
+		if (session.status !== "authenticated") {
+			setLoginOpen(true);
+			return;
+		}
 		await placeOrder(selectedProducts, paymentMethod);
 		resetSelectedProducts();
 	};

@@ -57,19 +57,6 @@ const OrderPage = () => {
 	const hasImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !!product.image) ?? false, [filteredProducts]);
 	const hasNonImageItems = useMemo(() => filteredProducts?.some((product) => !product.hidden && !product.image) ?? false, [filteredProducts]);
 
-	const showOrderButton = useMemo(() => {
-		if (!table || !restaurant?.tables?.length) return false;
-		const normTable = (s?: string) =>
-			(s || "")
-				.toLowerCase()
-				.replace(/[^a-z0-9]/g, "")
-				.replace(/^table/, "")
-				.replace(/^0+/, "") || "0";
-		const inputNorm = normTable(table);
-		return restaurant.tables.some((t) => normTable(t.username) === inputNorm || normTable(t.name) === inputNorm);
-	}, [table, restaurant?.tables]);
-	const eligibleToOrder = session.data?.role === "customer" && showOrderButton;
-
 	const onMenuScroll = (event: UIEvent<HTMLDivElement>) => {
 		const scrollTop = (event.target as HTMLDivElement).scrollTop;
 		if (scrollTop > 30) {
@@ -88,9 +75,10 @@ const OrderPage = () => {
 		}
 	};
 	const onLoginClick = () => {
-		if (table) return setLoginOpen(true);
-		toast.info("Please scan the table QR code to start ordering");
-		return params.router.push("/scan");
+		if (!table) {
+			params.set({ table: "1" });
+		}
+		setLoginOpen(true);
 	};
 	const increaseProductQuantity = (product: TMenuCustom) => {
 		if (product.availability === "sold-out") {
@@ -98,18 +86,7 @@ const OrderPage = () => {
 			return;
 		}
 		if (!table) {
-			toast.info("Please scan the table QR code to start ordering");
-			params.router.push("/scan");
-			return;
-		}
-		if (session.status !== "authenticated") {
-			setLoginOpen(true);
-			return;
-		}
-		if (!eligibleToOrder) {
-			toast.info("Please scan the table QR code to start ordering");
-			params.router.push("/scan");
-			return;
+			params.set({ table: "1" });
 		}
 		const selection = [...selectedProducts];
 		if (selectedProducts.some((item) => item._id === product._id)) {
@@ -121,6 +98,7 @@ const OrderPage = () => {
 			selection.push(product);
 		}
 		setSelectedProducts(selection);
+		setSideSheetOpen(true);
 	};
 	const decreaseProductQuantity = (product: TMenuCustom) => {
 		let selection = [...selectedProducts];
@@ -168,17 +146,13 @@ const OrderPage = () => {
 					</h1>
 					<div className="options">
 						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={setSearchValue} />
-						{(!session.data?.role || !showOrderButton) && (
-							<Button className="loginButton" label={showOrderButton ? "Order" : "Scan"} onClick={onLoginClick} />
-						)}
-						{eligibleToOrder && (
-							<Button
-								icon="e43b"
-								iconType="solid"
-								label={`${selectedProducts?.length > 0 ? selectedProducts?.length : ""}`}
-								onClick={() => setSideSheetOpen(true)}
-							/>
-						)}
+						{!session.data?.role && <Button className="loginButton" label="Login" onClick={onLoginClick} />}
+						<Button
+							icon="e43b"
+							iconType="solid"
+							label={`${selectedProducts?.length > 0 ? selectedProducts?.length : ""}`}
+							onClick={() => setSideSheetOpen(true)}
+						/>
 					</div>
 				</div>
 
@@ -209,7 +183,7 @@ const OrderPage = () => {
 							</h1>
 						</div>
 						{hasImageItems && (
-							<div className={`itemContainer ${!eligibleToOrder ? "restrictOrder " : ""}`}>
+							<div className="itemContainer">
 								<div>
 									{filteredProducts?.map(
 										(item, key) =>
@@ -217,7 +191,6 @@ const OrderPage = () => {
 												<MenuCard
 													key={key}
 													item={item}
-													restrictOrder={!eligibleToOrder}
 													increaseQuantity={increaseProductQuantity}
 													decreaseQuantity={decreaseProductQuantity}
 													showInfo={item._id.toString() === showInfoCard.toString()}
@@ -236,13 +209,12 @@ const OrderPage = () => {
 						)}
 						{hasImageItems && hasNonImageItems && <hr />}
 						{hasNonImageItems && (
-							<div className={`itemContainer withoutImage ${!eligibleToOrder ? "restrictOrder " : ""}`}>
+							<div className="itemContainer withoutImage">
 								<div>
 									{filteredProducts?.map((item, key) => (
 										<MenuCard
 											key={key}
 											item={item}
-											restrictOrder={!eligibleToOrder}
 											increaseQuantity={increaseProductQuantity}
 											decreaseQuantity={decreaseProductQuantity}
 											showInfo={item._id.toString() === showInfoCard.toString()}

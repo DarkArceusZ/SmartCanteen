@@ -40,7 +40,7 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 			if (!fname.trim()) {
 				return toast.error("Please enter your first name");
 			}
-			if (!params.get("table")) return toast.error("Please scan the QR Code");
+			const tableNum = params.get("table") || "1";
 
 			setBusy(true);
 
@@ -50,7 +50,7 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 				phone: phoneNumber,
 				fname: fname.trim(),
 				lname: lname.trim(),
-				table: params.get("table"),
+				table: tableNum,
 				callbackUrl: `${window.location.origin}`,
 			});
 
