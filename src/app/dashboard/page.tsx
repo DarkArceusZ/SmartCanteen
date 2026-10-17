@@ -18,6 +18,8 @@ const navItems = [
 	{ label: "sign out", icon: "f011", value: "signout" },
 ];
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ searchParams }: IMetaDataProps) {
 	const s = await searchParams;
 	return {

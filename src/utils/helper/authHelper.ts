@@ -9,7 +9,7 @@ import { isEmailValid } from "./common";
 import { verifyPassword } from "./passwordHelper";
 
 export const authOptions: AuthOptions = {
-	secret: process.env.NEXTAUTH_SECRET,
+	secret: process.env.NEXTAUTH_SECRET || "smartcanteen-fallback-auth-secret-32-chars-long",
 	providers: [
 		CredentialsProvider({
 			id: "restaurant",

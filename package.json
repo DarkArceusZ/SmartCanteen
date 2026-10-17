@@ -45,5 +45,9 @@
 		"mongodb-memory-server": "^11.3.0",
 		"typescript": "5.9.3",
 		"ultracite": "7.1.1"
+	},
+	"packageManager": "pnpm@9.15.4",
+	"engines": {
+		"node": ">=20.0.0"
 	}
 }

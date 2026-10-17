@@ -21,6 +21,8 @@ const navItems = [
 	{ label: "sign out", value: "signout", icon: "f011" },
 ];
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: IRestaurantProps): Promise<Metadata> {
 	const { restaurant } = await params;
 	const profile = await getRestaurantProfile(restaurant);

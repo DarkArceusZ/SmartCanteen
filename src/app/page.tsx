@@ -8,6 +8,8 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import { buildMetadata } from "#utils/seo/metadata";
 import PageContainer from "./_homepage/PageContainer";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = buildMetadata({
 	title: "Contactless Restaurant Ordering & AI-Powered Dining",
 	description: SITE_DESCRIPTION,
@@ -15,7 +17,12 @@ export const metadata = buildMetadata({
 });
 
 export default async function Homepage() {
-	const color = (await getThemeColor()) ?? DEFAULT_THEME_COLOR;
+	let color = DEFAULT_THEME_COLOR;
+	try {
+		color = (await getThemeColor()) ?? DEFAULT_THEME_COLOR;
+	} catch (err) {
+		console.warn("Theme color fallback on Homepage:", err);
+	}
 	return (
 		<DashboardProvider>
 			<script dangerouslySetInnerHTML={{ __html: themeController({ color }) }} suppressHydrationWarning />

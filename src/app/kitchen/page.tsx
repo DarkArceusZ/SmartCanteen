@@ -7,6 +7,8 @@ import { authOptions } from "#utils/helper/authHelper";
 import KitchenBoard from "./_components/KitchenBoard";
 import "./kitchen.scss";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
 	title: "SmartCanteen AI • Kitchen Order Display",
 };

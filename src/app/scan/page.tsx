@@ -3,6 +3,8 @@ import { DEFAULT_THEME_COLOR } from "#utils/constants/common";
 import { getThemeColor } from "#utils/database/helper/getThemeColor";
 import ScannerClient from "./ScannerClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function ScanPage() {
 	const color = (await getThemeColor()) ?? DEFAULT_THEME_COLOR;
 
