@@ -1,11 +1,14 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
 import { Icon, Textfield } from "xtreme-ui";
+import type { ChatAction } from "../../types/chat";
+import type { TMenu } from "../../utils/database/models/menu";
 import { useChat } from "../../utils/hooks/useChat";
 import { useResize } from "../../utils/hooks/useResize";
-import { useRestaurant } from "../context/useContext";
+import { useOrder, useRestaurant } from "../context/useContext";
 import { ChatFab } from "./ChatFab";
 
 import "./chat.scss";
@@ -14,11 +17,38 @@ import { MessageList } from "./MessageList";
 export const ChatInterface = () => {
 	const session = useSession();
 	const { restaurant, loading } = useRestaurant();
+	const { increaseProductQuantity, setSideSheetOpen } = useOrder();
 	const isAuthenticated = session.status === "authenticated";
+
+	const handleChatAction = useCallback(
+		(action: ChatAction) => {
+			if (action.type === "ADD_TO_CART" && action.items?.length) {
+				const allMenus = (restaurant?.menus as Array<TMenu & { quantity: number }>) || [];
+				let addedCount = 0;
+				for (const actionItem of action.items) {
+					const target = allMenus.find(
+						(m) => m.name.toLowerCase() === actionItem.name.toLowerCase() || m.name.toLowerCase().includes(actionItem.name.toLowerCase()),
+					);
+					if (target) {
+						increaseProductQuantity(target, actionItem.quantity || 1);
+						addedCount += actionItem.quantity || 1;
+					}
+				}
+				if (addedCount > 0) {
+					toast.success(`Jarvis added item(s) to your cart!`);
+					setSideSheetOpen(true);
+				}
+			} else if (action.type === "OPEN_CART") {
+				setSideSheetOpen(true);
+			}
+		},
+		[restaurant?.menus, increaseProductQuantity, setSideSheetOpen],
+	);
 
 	const { isOpen, messages, isLoading, sendMessage, toggleOpen, resetChat, messagesEndRef, chatRef } = useChat({
 		restaurantId: restaurant?.username ?? "",
 		isAuthenticated,
+		onAction: handleChatAction,
 	});
 
 	const { dimensions, handleResizeStart } = useResize({

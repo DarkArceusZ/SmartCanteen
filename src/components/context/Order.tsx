@@ -1,7 +1,7 @@
 import noop from "lodash/noop";
 import pick from "lodash/pick";
 import { useSession } from "next-auth/react";
-import { createContext, type ReactNode, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import useSWR from "swr";
 
@@ -13,6 +13,12 @@ const OrderDefault: TOrderInitialType = {
 	order: undefined,
 	orderHistory: [],
 	loading: false,
+	selectedProducts: [],
+	increaseProductQuantity: noop,
+	decreaseProductQuantity: noop,
+	resetSelectedProducts: noop,
+	sideSheetOpen: false,
+	setSideSheetOpen: noop,
 	placeOrder: () => new Promise(noop),
 	placingOrder: false,
 	cancelOrder: noop,
@@ -41,6 +47,8 @@ export const OrderProvider = ({ children }: TOrderProviderProps) => {
 	const [placingOrder, setPlacingOrder] = useState(false);
 	const [cancelingOrder, setCancelingOrder] = useState(false);
 	const [loginOpen, setLoginOpen] = useState(false);
+	const [sideSheetOpen, setSideSheetOpen] = useState(false);
+	const [selectedProducts, setSelectedProducts] = useState<Array<TMenuCustom>>([]);
 
 	const order = rawOrder && rawOrder._id === dismissedOrderId ? undefined : rawOrder;
 
@@ -50,7 +58,46 @@ export const OrderProvider = ({ children }: TOrderProviderProps) => {
 		}
 	};
 
+	const increaseProductQuantity = useCallback((product: TMenuCustom, qty = 1) => {
+		if (product.availability === "sold-out") {
+			toast.error("Sorry, this item is currently sold out!");
+			return;
+		}
+		setSelectedProducts((prev) => {
+			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
+			if (idx >= 0) {
+				const next = [...prev];
+				next[idx].quantity += qty;
+				return next;
+			}
+			product.quantity = qty;
+			return [...prev, product];
+		});
+	}, []);
+
+	const decreaseProductQuantity = useCallback((product: TMenuCustom) => {
+		setSelectedProducts((prev) => {
+			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
+			if (idx < 0) return prev;
+			if (prev[idx].quantity <= 1) {
+				return prev.filter((item) => String(item._id) !== String(product._id));
+			}
+			const next = [...prev];
+			next[idx].quantity -= 1;
+			return next;
+		});
+	}, []);
+
+	const resetSelectedProducts = useCallback(() => {
+		setSelectedProducts([]);
+	}, []);
+
 	const placeOrder = async (products: Array<TMenuCustom>, paymentMethod?: "cash" | "upi") => {
+		if (session.status !== "authenticated" || !session.data?.customer?._id) {
+			setLoginOpen(true);
+			toast.info("Please enter your name and phone number to complete order");
+			return;
+		}
 		setPlacingOrder(true);
 		setDismissedOrderId(null);
 		const req = await fetch("/api/order/place", {
@@ -62,8 +109,14 @@ export const OrderProvider = ({ children }: TOrderProviderProps) => {
 		});
 		const res = await req.json();
 
-		if (!req.ok) toast.error(res?.message || "Failed to place order");
-		else toast.success(res?.message || "Order placed successfully!");
+		if (!req.ok) {
+			if (res?.message?.toLowerCase().includes("name and phone")) {
+				setLoginOpen(true);
+			}
+			toast.error(res?.message || "Failed to place order");
+		} else {
+			toast.success(res?.message || "Order placed successfully!");
+		}
 		await mutate();
 		await mutateHistory();
 		setPlacingOrder(false);
@@ -91,6 +144,12 @@ export const OrderProvider = ({ children }: TOrderProviderProps) => {
 				order,
 				orderHistory,
 				loading,
+				selectedProducts,
+				increaseProductQuantity,
+				decreaseProductQuantity,
+				resetSelectedProducts,
+				sideSheetOpen,
+				setSideSheetOpen,
 				placeOrder,
 				placingOrder,
 				cancelOrder,
@@ -112,6 +171,12 @@ export type TOrderInitialType = {
 	order?: TOrder;
 	orderHistory: TOrder[];
 	loading: boolean;
+	selectedProducts: TMenuCustom[];
+	increaseProductQuantity: (product: TMenuCustom, qty?: number) => void;
+	decreaseProductQuantity: (product: TMenuCustom) => void;
+	resetSelectedProducts: () => void;
+	sideSheetOpen: boolean;
+	setSideSheetOpen: (open: boolean) => void;
 	placeOrder: (products: Array<TMenuCustom>, paymentMethod?: "cash" | "upi") => Promise<void>;
 	placingOrder: boolean;
 	cancelOrder: () => void;

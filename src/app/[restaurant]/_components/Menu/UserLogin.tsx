@@ -1,7 +1,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { ChangeEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Button, Textfield } from "xtreme-ui";
 
@@ -13,6 +13,15 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 	const [busy, setBusy] = useState(false);
 	const [phone, setPhone] = useState("");
 	const [fname, setFName] = useState("");
+
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const savedName = localStorage.getItem("smartcanteen_customer_name");
+			const savedPhone = localStorage.getItem("smartcanteen_customer_phone");
+			if (savedName) setFName(savedName);
+			if (savedPhone) setPhone(savedPhone.replace("+91", ""));
+		}
+	}, []);
 
 	const rawDigits = phone.replace(/[^\d]/g, "");
 	const cleanPhone = rawDigits.startsWith("91") && rawDigits.length > 10 ? rawDigits.slice(2) : rawDigits;
@@ -28,25 +37,39 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 
 		setBusy(true);
 		const tableNum = params.get("table") || "1";
+		const restaurantClean = pathname.replace(/^\//, "").split("/")[0].toLowerCase();
 
-		const res = await signIn("customer", {
-			redirect: false,
-			restaurant: pathname.replaceAll("/", "").toLowerCase(),
-			phone: phoneNumber,
-			fname: fname.trim(),
-			table: tableNum,
-			callbackUrl: `${window.location.origin}`,
-		});
+		try {
+			const res = await signIn("customer", {
+				redirect: false,
+				restaurant: restaurantClean,
+				phone: phoneNumber,
+				fname: fname.trim(),
+				table: tableNum,
+				callbackUrl: `${window.location.origin}`,
+			});
 
-		if (res?.error) {
-			toast.error(res?.error);
+			if (res?.error) {
+				toast.error(res?.error);
+				setBusy(false);
+				return;
+			}
+
+			if (typeof window !== "undefined") {
+				try {
+					localStorage.setItem("smartcanteen_customer_name", fname.trim());
+					localStorage.setItem("smartcanteen_customer_phone", phoneNumber);
+				} catch {}
+			}
+
+			toast.success(`Welcome, ${fname.trim()}!`);
+			setOpen(false);
+		} catch (err) {
+			console.error("Login failed:", err);
+			toast.error("Failed to sign in. Please try again.");
+		} finally {
 			setBusy(false);
-			return;
 		}
-
-		toast.success(`Welcome, ${fname.trim()}!`);
-		setOpen(false);
-		setBusy(false);
 	};
 
 	return (

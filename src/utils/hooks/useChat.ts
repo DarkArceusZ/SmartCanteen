@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChatMessage } from "../../types/chat";
+import type { ChatAction, ChatMessage } from "../../types/chat";
 import { createMessage, sendChatMessage } from "../ai/chat";
 
 interface UseChatProps {
 	restaurantId: string;
 	isAuthenticated?: boolean;
 	initialMessages?: ChatMessage[];
+	onAction?: (action: ChatAction) => void;
 }
 
-export const useChat = ({ restaurantId, initialMessages = [] }: UseChatProps) => {
+export const useChat = ({ restaurantId, initialMessages = [], onAction }: UseChatProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
 	const [isLoading, setIsLoading] = useState(false);
@@ -38,8 +39,12 @@ export const useChat = ({ restaurantId, initialMessages = [] }: UseChatProps) =>
 				"assistant",
 				(data.text || "").replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "").replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, ""),
 				data.toolResults,
+				data.action,
 			);
 			setMessages((prev) => [...prev, assistantMessage]);
+			if (data.action && onAction) {
+				onAction(data.action);
+			}
 		} catch {
 			const errorMessage = createMessage("assistant", "Sorry, I encountered an error. Please try again.");
 			setMessages((prev) => [...prev, errorMessage]);

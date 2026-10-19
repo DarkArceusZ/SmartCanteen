@@ -1,6 +1,5 @@
 import { signOut, useSession } from "next-auth/react";
 import { type UIEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "react-toastify";
 import { ActionCard, Button, Spinner } from "xtreme-ui";
 
 import SearchButton from "#components/base/SearchButton";
@@ -17,8 +16,19 @@ import "./orderPage.scss";
 
 const OrderPage = () => {
 	const session = useSession();
-	const { loading, loginOpen, setLoginOpen, order: activeOrder } = useOrder();
-	const { restaurant } = useRestaurant();
+	const {
+		loading,
+		loginOpen,
+		setLoginOpen,
+		order: activeOrder,
+		selectedProducts,
+		increaseProductQuantity,
+		decreaseProductQuantity,
+		resetSelectedProducts,
+		sideSheetOpen,
+		setSideSheetOpen,
+	} = useOrder();
+	const { restaurant, loading: restaurantLoading } = useRestaurant();
 
 	const menus = useMemo(() => (restaurant?.menus as Array<TMenuCustom>) || [], [restaurant?.menus]);
 	const params = useQueryParams();
@@ -31,7 +41,6 @@ const OrderPage = () => {
 
 	const order = useRef<HTMLDivElement>(null);
 	const categories = useRef<HTMLDivElement>(null);
-	const [sideSheetOpen, setSideSheetOpen] = useState(false);
 	const [topHeading, setTopHeading] = useState(["Menu", "Category"]);
 	const [orderHeading, setOrderHeading] = useState(["Explore", "Menu"]);
 	const [sideSheetHeading, setSideSheetHeading] = useState(["Your", "Order"]);
@@ -39,7 +48,6 @@ const OrderPage = () => {
 	const [searchActive, setSearchActive] = useState(false);
 	const [floatHeader, setFloatHeader] = useState(false);
 	const [showInfoCardId, setShowInfoCardId] = useState<string>("");
-	const [selectedProducts, setSelectedProducts] = useState<Array<TMenuCustom>>([]);
 
 	// Instant local filtering with useMemo
 	const filteredProducts = useMemo(() => {
@@ -80,7 +88,7 @@ const OrderPage = () => {
 		(categoryName: string) => {
 			setSelectedCategory((prev) => {
 				const next = categoryName.toLowerCase() === "all" || prev.toLowerCase() === categoryName.toLowerCase() ? "all" : categoryName;
-				params.set({ category: next === "all" ? "" : next });
+				params.set({ category: next === "all" ? "" : next }, { shallow: true });
 				return next;
 			});
 		},
@@ -90,7 +98,7 @@ const OrderPage = () => {
 	const onSearchChange = useCallback(
 		(val: string) => {
 			setSearchValue(val);
-			params.set({ search: val });
+			params.set({ search: val }, { shallow: true });
 		},
 		[params],
 	);
@@ -102,55 +110,14 @@ const OrderPage = () => {
 		setLoginOpen(true);
 	}, [params, setLoginOpen]);
 
-	const increaseProductQuantity = useCallback((product: TMenuCustom) => {
-		if (product.availability === "sold-out") {
-			toast.error("Sorry, this item is currently sold out!");
-			return;
-		}
-		setSelectedProducts((prev) => {
-			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
-			if (idx >= 0) {
-				const next = [...prev];
-				next[idx].quantity += 1;
-				return next;
-			}
-			product.quantity = 1;
-			return [...prev, product];
-		});
-		setSideSheetOpen(true);
-	}, []);
-
-	const decreaseProductQuantity = useCallback((product: TMenuCustom) => {
-		setSelectedProducts((prev) => {
-			const idx = prev.findIndex((item) => String(item._id) === String(product._id));
-			if (idx < 0) return prev;
-			if (prev[idx].quantity <= 1) {
-				return prev.filter((item) => String(item._id) !== String(product._id));
-			}
-			const next = [...prev];
-			next[idx].quantity -= 1;
-			return next;
-		});
-	}, []);
-
 	useEffect(() => {
 		if (session.data?.role === "customer") setOrderHeading(["Choose", "Order"]);
 		else setOrderHeading(["Explore", "Menu"]);
 	}, [session.data?.role]);
 
-	useEffect(() => {
-		if (
-			session.data?.role === "customer" &&
-			restaurant?.username &&
-			session.data?.restaurant?.username &&
-			session.data.restaurant.username.toLowerCase() !== restaurant.username.toLowerCase()
-		) {
-			signOut({ redirect: false });
-		}
-	}, [restaurant?.username, session.data?.restaurant?.username, session.data?.role]);
-
 	return (
 		<div className="orderPage">
+			{(loading || restaurantLoading) && <div className="globalTopLoader" />}
 			<div className="mainContainer" onScroll={onMenuScroll}>
 				<div className={`mainHeader ${searchActive ? "searchActive" : ""} ${floatHeader ? "floatHeader" : ""}`}>
 					<h1>
@@ -158,7 +125,20 @@ const OrderPage = () => {
 					</h1>
 					<div className="options">
 						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={onSearchChange} />
-						{!session.data?.role && <Button className="loginButton" label="Login" onClick={onLoginClick} />}
+						{session.data?.role === "customer" ? (
+							<div className="customerProfileBadge" title="Logged in customer">
+								<span className="customerName">👤 {session.data.customer?.fname || "Guest"}</span>
+								<button
+									type="button"
+									className="customerSignoutBtn"
+									title="Log out"
+									onClick={() => signOut({ callbackUrl: window.location.pathname + window.location.search })}>
+									✕
+								</button>
+							</div>
+						) : !session.data?.role ? (
+							<Button className="loginButton" label="Login" onClick={onLoginClick} />
+						) : null}
 						<Button
 							icon="e43b"
 							iconType="solid"
@@ -170,6 +150,15 @@ const OrderPage = () => {
 
 				{restaurant && (
 					<div className="category">
+						<button
+							type="button"
+							className="categoryScrollBtn scrollLeft"
+							aria-label="Scroll categories left"
+							onClick={() => {
+								categories.current?.scrollBy({ left: -220, behavior: "smooth" });
+							}}>
+							‹
+						</button>
 						<div className="itemCategories" ref={categories}>
 							<ActionCard className={`menuCategory ${selectedCategory === "all" ? "active" : ""}`} onClick={() => onCategoryClick("all")}>
 								<span className="title">All</span>
@@ -183,6 +172,15 @@ const OrderPage = () => {
 								</ActionCard>
 							))}
 						</div>
+						<button
+							type="button"
+							className="categoryScrollBtn scrollRight"
+							aria-label="Scroll categories right"
+							onClick={() => {
+								categories.current?.scrollBy({ left: 220, behavior: "smooth" });
+							}}>
+							›
+						</button>
 					</div>
 				)}
 				{!restaurant ? (
@@ -242,7 +240,7 @@ const OrderPage = () => {
 						selectedProducts={selectedProducts}
 						increaseProductQuantity={increaseProductQuantity}
 						decreaseProductQuantity={decreaseProductQuantity}
-						resetSelectedProducts={() => setSelectedProducts([])}
+						resetSelectedProducts={resetSelectedProducts}
 						setSideSheetHeading={setSideSheetHeading}
 					/>
 				)}

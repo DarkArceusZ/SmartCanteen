@@ -1,6 +1,6 @@
-import type { ChatMessage, MenuSuggestion } from "../../types/chat";
+import type { ChatAction, ChatMessage, MenuSuggestion } from "../../types/chat";
 
-export const sendChatMessage = async (messages: ChatMessage[], restaurantId: string): Promise<{ text: string; toolResults: MenuSuggestion[][] }> => {
+export const sendChatMessage = async (messages: ChatMessage[], restaurantId: string): Promise<{ text: string; toolResults: MenuSuggestion[][]; action?: ChatAction }> => {
 	const response = await fetch("/api/chat", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -19,12 +19,13 @@ export const sendChatMessage = async (messages: ChatMessage[], restaurantId: str
 	return data;
 };
 
-export const createMessage = (role: "user" | "assistant", content: string, toolResults?: MenuSuggestion[][]): ChatMessage => {
+export const createMessage = (role: "user" | "assistant", content: string, toolResults?: MenuSuggestion[][], action?: ChatAction): ChatMessage => {
 	return {
 		id: Date.now().toString() + Math.random(),
 		role,
 		content,
 		toolResults,
+		action,
 		createdAt: Date.now(),
 	};
 };

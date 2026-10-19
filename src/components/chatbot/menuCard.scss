@@ -102,3 +102,38 @@
 		transform: translateX(0);
 	}
 }
+
+.chatbotMenuCardWrapper {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	.chatbotMenuCard {
+		flex: 1;
+	}
+
+	.chatAddBtn {
+		background: hsl(var(--colorBrandPrimary));
+		color: #ffffff;
+		border: none;
+		border-radius: 999px;
+		padding: 6px 14px;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		white-space: nowrap;
+		flex-shrink: 0;
+		transition: all 0.2s ease;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+		&:hover {
+			filter: brightness(1.15);
+			transform: scale(1.05);
+		}
+
+		&:active {
+			transform: scale(0.96);
+		}
+	}
+}

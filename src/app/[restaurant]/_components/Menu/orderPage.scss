@@ -9,6 +9,23 @@
 	display: flex;
 	overflow: hidden;
 
+	.globalTopLoader {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: linear-gradient(90deg, #10b981, #3b82f6, #10b981);
+		background-size: 200% 100%;
+		animation: topLoaderPulse 1.2s infinite linear;
+		z-index: 99999;
+	}
+
+	@keyframes topLoaderPulse {
+		0% { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
+	}
+
 	.mainContainer {
 		position: relative;
 		width: 100%;
@@ -106,6 +123,35 @@
 				justify-content: flex-end;
 				transition: all 0.1s ease-out;
 
+				.customerProfileBadge {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					background: rgba(255, 255, 255, 0.08);
+					border: 1px solid rgba(255, 255, 255, 0.15);
+					border-radius: 999px;
+					padding: 6px 14px;
+					font-size: 13px;
+					font-weight: 600;
+					color: var(--colorContentPrimary);
+					white-space: nowrap;
+
+					.customerSignoutBtn {
+						background: transparent;
+						border: none;
+						color: rgba(255, 255, 255, 0.5);
+						font-size: 13px;
+						cursor: pointer;
+						padding: 0 4px;
+						line-height: 1;
+						transition: color 0.15s ease;
+
+						&:hover {
+							color: #ef4444;
+						}
+					}
+				}
+
 				.dashboardButton {
 					--buttonWidth: 150px;
 
@@ -131,8 +177,46 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			flex-direction: column;
 			margin-top: 140px;
+
+			.categoryScrollBtn {
+				position: absolute;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 38px;
+				height: 38px;
+				border-radius: 50%;
+				background: var(--colorBackgroundPrimary);
+				color: var(--colorContentPrimary);
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				font-size: 22px;
+				line-height: 1;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				z-index: 5;
+				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+				transition: all 0.2s ease;
+
+				&:hover {
+					background: hsl(var(--colorBrandPrimary));
+					color: white;
+					transform: translateY(-50%) scale(1.1);
+				}
+
+				&:active {
+					transform: translateY(-50%) scale(0.95);
+				}
+
+				&.scrollLeft {
+					left: 12px;
+				}
+
+				&.scrollRight {
+					right: 12px;
+				}
+			}
 
 			&.disable {
 				opacity: 0.5;
@@ -147,7 +231,7 @@
 				display: flex;
 				align-items: center;
 				width: 100%;
-				padding: 1rem 50px;
+				padding: 1rem 60px;
 				overflow-x: auto;
 				scroll-behavior: smooth;
 				scrollbar-width: none;

@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
 		let text = "";
 		const toolResults: TMenu[][] = [];
+		let action: unknown;
 
 		// Attempt Cloud LLM first if API key is provided
 		try {
@@ -35,8 +36,15 @@ export async function POST(req: Request) {
 
 			if (result?.text) {
 				text = result.text;
-				const match = text.match(/<<<REC:?(.*?)>>>/);
+				const actionMatch = text.match(/<<<ACTION:?(.*?)>>>/);
+				if (actionMatch) {
+					text = text.replace(actionMatch[0], "").trim();
+					try {
+						action = JSON.parse(actionMatch[1]);
+					} catch {}
+				}
 
+				const match = text.match(/<<<REC:?(.*?)>>>/);
 				if (match) {
 					text = text.replace(match[0], "").trim();
 					try {
@@ -61,13 +69,14 @@ export async function POST(req: Request) {
 				restaurantName: name,
 			});
 			text = fallback.text;
+			action = fallback.action;
 			if (fallback.recNames?.length) {
 				const found = fallback.recNames.map((n) => menuMap.get(n.toLowerCase())).filter((i): i is TMenu => !!i);
 				if (found.length) toolResults.push(found);
 			}
 		}
 
-		return Response.json({ text, toolResults });
+		return Response.json({ text, toolResults, action });
 	} catch (error) {
 		console.error("Error in AI Chat API:", error);
 		return Response.json({ text: "I'm right here! How can I help you with our menu today?", toolResults: [] }, { status: 200 });

@@ -1,4 +1,5 @@
 import type { TMenu } from "#utils/database/models/menu";
+import type { ChatAction } from "../../types/chat";
 
 interface FallbackParams {
 	query: string;
@@ -7,10 +8,84 @@ interface FallbackParams {
 	restaurantName: string;
 }
 
-export function generateSmartLocalReply({ query, items, customerName, restaurantName }: FallbackParams): { text: string; recNames: string[] } {
+const WORD_TO_NUM: Record<string, number> = {
+	one: 1,
+	two: 2,
+	three: 3,
+	four: 4,
+	five: 5,
+	six: 6,
+	seven: 7,
+	eight: 8,
+	nine: 9,
+	ten: 10,
+};
+
+export function generateSmartLocalReply({ query, items, customerName, restaurantName }: FallbackParams): {
+	text: string;
+	recNames: string[];
+	action?: ChatAction;
+} {
 	const q = (query || "").toLowerCase().trim();
 	const availableItems = items.filter((i) => i.availability !== "sold-out" && !i.hidden);
 	const nameOrGuest = customerName && customerName !== "Guest" ? customerName : "";
+
+	// 0. Order / Add to Cart Intent
+	const isOrderIntent =
+		q.includes("order") || q.includes("add to cart") || q.includes("add") || q.includes("want") || q.includes("get me") || q.includes("buy") || q.includes("have");
+
+	const isViewCartIntent =
+		(q.includes("cart") && !q.includes("add")) || q.includes("checkout") || q.includes("view cart") || q.includes("show cart") || q.includes("place order");
+
+	if (isViewCartIntent && !q.includes("add")) {
+		return {
+			text: "Opening your order cart right now! You can review your selected items and complete your order.",
+			recNames: [],
+			action: { type: "OPEN_CART" },
+		};
+	}
+
+	if (isOrderIntent && availableItems.length > 0) {
+		// Detect quantity: e.g. "2 coffees", "two sandwiches"
+		let quantity = 1;
+		const numMatch = q.match(/\b(\d+)\b/);
+		if (numMatch) {
+			quantity = Math.max(1, Math.min(20, Number.parseInt(numMatch[1], 10)));
+		} else {
+			for (const [word, num] of Object.entries(WORD_TO_NUM)) {
+				if (new RegExp(`\\b${word}\\b`).test(q)) {
+					quantity = num;
+					break;
+				}
+			}
+		}
+
+		// Find closest matching item
+		const scoredMatches = availableItems
+			.map((item) => {
+				let score = 0;
+				const nameWords = item.name.toLowerCase().split(/\s+/);
+				for (const word of nameWords) {
+					if (word.length > 2 && q.includes(word)) score += 10;
+				}
+				if (q.includes(item.name.toLowerCase())) score += 50;
+				return { item, score };
+			})
+			.filter((entry) => entry.score > 0)
+			.sort((a, b) => b.score - a.score);
+
+		if (scoredMatches.length > 0) {
+			const matched = scoredMatches[0].item;
+			return {
+				text: `I've added <b>${quantity}x ${matched.name}</b> (₹${matched.price * quantity}) directly to your cart! You can tap View Cart to review and place your order.`,
+				recNames: [matched.name],
+				action: {
+					type: "ADD_TO_CART",
+					items: [{ name: matched.name, quantity }],
+				},
+			};
+		}
+	}
 
 	// 1. Initial Greeting / "Hey!"
 	if (!q || q === "hey!" || q === "hey" || q === "hi" || q === "hello" || q.includes("namaste") || q.includes("start")) {

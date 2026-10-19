@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { Button } from "xtreme-ui";
 
 import { useOrder, useRestaurant } from "#components/context/useContext";
@@ -46,8 +47,9 @@ const CartPage = (props: TCartPageProps) => {
 
 	const onPlaceOrder = async () => {
 		if (selectedProducts.length === 0) return;
-		if (session.status !== "authenticated") {
+		if (session.status !== "authenticated" || !session.data?.customer?._id) {
 			setLoginOpen(true);
+			toast.info("Please enter your name and phone number to place your order");
 			return;
 		}
 		await placeOrder(selectedProducts, paymentMethod);

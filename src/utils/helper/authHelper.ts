@@ -114,9 +114,9 @@ export const authOptions: AuthOptions = {
 						role: "customer" as const,
 						customer: customer.toObject ? customer.toObject() : customer,
 						restaurant: {
-							username: account?.profile?.restaurantID || account.username,
+							username: account.username.toLowerCase(),
 							table: tableUsername,
-							name: account?.profile?.name,
+							name: account?.profile?.name || account.username,
 							avatar: account?.profile?.avatar,
 						},
 					} as unknown as AuthUser,
@@ -124,7 +124,14 @@ export const authOptions: AuthOptions = {
 			},
 		}),
 	],
-	session: { strategy: "jwt" },
+	session: {
+		strategy: "jwt",
+		maxAge: 30 * 24 * 60 * 60,
+		updateAge: 24 * 60 * 60,
+	},
+	jwt: {
+		maxAge: 30 * 24 * 60 * 60,
+	},
 	callbacks: {
 		async session({ session, token }) {
 			if (token?.user) {

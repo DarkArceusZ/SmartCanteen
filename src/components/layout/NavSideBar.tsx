@@ -22,7 +22,10 @@ const NavSideBar = (props: TNavSideBar) => {
 	const onNavClick = (tab: string) => {
 		if (tab === "home") return router.push("/");
 		if (tab === "kitchen") return router.push("/kitchen");
-		if (tab === "signout") return signOut({ callbackUrl: "/" });
+		if (tab === "signout") {
+			const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+			return signOut({ callbackUrl: currentUrl });
+		}
 		queryParams.set({ tab });
 	};
 
