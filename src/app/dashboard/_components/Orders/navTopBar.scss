@@ -154,6 +154,27 @@
 					text-transform: uppercase;
 					letter-spacing: 1.5px;
 					transition: all 0.2s ease-out;
+					display: flex;
+					align-items: center;
+
+					.tabBadge {
+						display: inline-flex;
+						align-items: center;
+						justify-content: center;
+						margin-left: 6px;
+						padding: 1px 6px;
+						font-size: 10px;
+						font-weight: 700;
+						border-radius: 9999px;
+						background: rgba(255, 255, 255, 0.12);
+						color: var(--colorContentPrimary);
+						letter-spacing: 0;
+					}
+				}
+
+				&.active p .tabBadge {
+					background: hsl(var(--colorBrandPrimary));
+					color: white;
 				}
 			}
 		}

@@ -20,6 +20,20 @@
 			> p {
 				color: white;
 			}
+
+			.orderMetaRow {
+				color: white;
+
+				.total {
+					color: white;
+				}
+
+				.payBadge {
+					background: rgba(0, 0, 0, 0.25);
+					border-color: rgba(255, 255, 255, 0.25);
+					color: white;
+				}
+			}
 		}
 	}
 
@@ -29,13 +43,12 @@
 			box-shadow: 0 0 5px hsl(var(--colorAlertError));
 
 			> p {
-				&.total {
-					pointer-events: none !important;
+				color: white;
+			}
 
-					&::after {
-						content: '' !important;
-					}
-				}
+			.orderMetaRow {
+				color: white;
+				pointer-events: none;
 			}
 
 			.options {
@@ -77,47 +90,84 @@
 			margin: 0;
 
 			&.table {
-				top: 15px;
+				top: 14px;
 				left: 20px;
 				font-variation-settings:
 					'wdth' 75,
-					'wght' 500;
+					'wght' 600;
 				font-size: 16px;
+				line-height: 1.2;
 			}
 
 			&.name {
-				top: 37px;
+				top: 36px;
 				left: 20px;
 				font-variation-settings:
 					'wdth' 75,
 					'wght' 400;
 				font-size: 12px;
-			}
-
-			&.total {
-				bottom: 0;
-				left: 0;
-				font-variation-settings:
-					'wdth' 75,
-					'wght' 500;
-				letter-spacing: 1.02px;
-				font-size: 14px;
-				padding: 15px 20px;
-				cursor: pointer;
-				pointer-events: none;
+				line-height: 1.2;
+				opacity: 0.85;
+				max-width: 200px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
 			}
 
 			&.noContent {
-				bottom: 0;
-				left: 0;
+				bottom: 14px;
+				left: 20px;
 				font-variation-settings:
 					'wdth' 75,
 					'wght' 500;
-				letter-spacing: 1.02px;
-				font-size: 14px;
-				padding: 15px 20px;
+				letter-spacing: 0.5px;
+				font-size: 13px;
 				cursor: pointer;
 				pointer-events: none;
+			}
+		}
+
+		.orderMetaRow {
+			position: absolute;
+			bottom: 14px;
+			left: 20px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0;
+			z-index: 2;
+
+			.total {
+				font-variation-settings:
+					'wdth' 75,
+					'wght' 600;
+				letter-spacing: 0.5px;
+				font-size: 14px;
+				margin: 0;
+				cursor: pointer;
+			}
+
+			.payBadge {
+				font-size: 11px;
+				font-weight: 600;
+				padding: 2px 7px;
+				border-radius: 4px;
+				background: rgba(255, 255, 255, 0.08);
+				border: 1px solid rgba(255, 255, 255, 0.12);
+				display: inline-flex;
+				align-items: center;
+
+				&.upi {
+					color: #10b981;
+					background: rgba(16, 185, 129, 0.12);
+					border-color: rgba(16, 185, 129, 0.3);
+				}
+
+				&.cash {
+					color: #f59e0b;
+					background: rgba(245, 158, 11, 0.12);
+					border-color: rgba(245, 158, 11, 0.3);
+				}
 			}
 		}
 
@@ -172,14 +222,19 @@
 					color: var(--colorContentPrimary);
 				}
 
-				> p.total {
-					pointer-events: all;
+				.orderMetaRow {
+					color: var(--colorContentPrimary);
 
-					&::after {
-						content: '(show details)';
-						font-size: 10px;
-						margin-left: 8px;
-						text-transform: capitalize;
+					.total {
+						pointer-events: all;
+						color: var(--colorContentPrimary);
+
+						&::after {
+							content: '(show details)';
+							font-size: 10px;
+							margin-left: 8px;
+							text-transform: capitalize;
+						}
 					}
 				}
 

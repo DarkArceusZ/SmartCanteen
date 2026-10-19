@@ -8,7 +8,7 @@ import { Button } from "xtreme-ui";
 import { useOrder, useRestaurant } from "#components/context/useContext";
 import NoContent from "#components/layout/NoContent";
 import type { TMenu } from "#utils/database/models/menu.js";
-import type { TProduct } from "#utils/database/models/order.js";
+import type { TOrder, TProduct } from "#utils/database/models/order.js";
 
 import ItemCard from "../../../../components/layout/ItemCard";
 import "./cartPage.scss";
@@ -16,7 +16,7 @@ import "./cartPage.scss";
 const CartPage = (props: TCartPageProps) => {
 	const { selectedProducts, increaseProductQuantity, decreaseProductQuantity, resetSelectedProducts } = props;
 	const { restaurant } = useRestaurant();
-	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder, setLoginOpen } = useOrder();
+	const { order, orderHistory = [], placeOrder, placingOrder, cancelOrder, cancelingOrder, dismissCompletedOrder, setLoginOpen } = useOrder();
 	const session = useSession();
 
 	const [selectionTotal, setSelectionTotal] = useState(0);
@@ -24,6 +24,7 @@ const CartPage = (props: TCartPageProps) => {
 	const [paymentMethod, setPaymentMethod] = useState<"cash" | "upi">("cash");
 
 	const [viewReceipt, setViewReceipt] = useState(false);
+	const [showHistoryView, setShowHistoryView] = useState(false);
 
 	useEffect(() => {
 		setSelectionTotal(
@@ -86,16 +87,97 @@ const CartPage = (props: TCartPageProps) => {
 		);
 	}
 
-	// 2. Empty Cart: No order placed and nothing selected
-	if (!selectedProducts.length && !order?.products?.length) {
+	// 2. Customer Order History View
+	if (showHistoryView) {
 		return (
 			<div className="cartPage">
-				<NoContent label={"Aren't you hungry?"} animationName="FoodBurgerHappy" />
+				<div className="backToCartBanner" onClick={() => setShowHistoryView(false)}>
+					← Back
+				</div>
+				<div className="customerOrderHistory" style={{ padding: "10px 4px" }}>
+					<h3 style={{ margin: "0 0 16px", color: "#f8fafc", fontSize: "1.1rem", fontWeight: 700 }}>Previous Orders ({orderHistory.length})</h3>
+					{orderHistory.map((histOrder: TOrder, idx: number) => {
+						const date = new Date(
+							(histOrder as unknown as { createdAt?: string; updatedAt?: string }).createdAt ||
+								(histOrder as unknown as { updatedAt?: string }).updatedAt ||
+								new Date(),
+						).toLocaleString();
+						return (
+							<div
+								key={idx}
+								style={{
+									background: "rgba(255, 255, 255, 0.03)",
+									border: "1px solid rgba(255, 255, 255, 0.08)",
+									borderRadius: "12px",
+									padding: "14px 16px",
+									marginBottom: "12px",
+									display: "flex",
+									flexDirection: "column",
+									gap: "8px",
+								}}>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+									<strong style={{ color: "#38bdf8", fontSize: "0.9rem" }}>Order #{histOrder._id?.toString().slice(-6).toUpperCase()}</strong>
+									<span
+										style={{
+											fontSize: "0.75rem",
+											padding: "2px 8px",
+											borderRadius: "999px",
+											fontWeight: 600,
+											background: histOrder.state === "complete" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+											color: histOrder.state === "complete" ? "#10b981" : "#ef4444",
+										}}>
+										{histOrder.state === "complete" ? "✓ Completed" : histOrder.state}
+									</span>
+								</div>
+								<div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+									{date} • Table {histOrder.table}
+								</div>
+								<div style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>
+									{histOrder.products?.map((p: TProduct, i: number) => (
+										<div key={i} style={{ display: "flex", justifyContent: "space-between", margin: "3px 0" }}>
+											<span>
+												{p.quantity}x {p.name}
+											</span>
+											<span>₹{p.price * p.quantity}</span>
+										</div>
+									))}
+								</div>
+								<div
+									style={{
+										borderTop: "1px dashed rgba(255, 255, 255, 0.1)",
+										paddingTop: "8px",
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										fontWeight: 700,
+										fontSize: "0.95rem",
+									}}>
+									<span>Total ({histOrder.paymentMethod === "upi" ? "📱 UPI" : "💵 Cash"})</span>
+									<span style={{ color: "#10b981" }}>₹{histOrder.orderTotal}</span>
+								</div>
+							</div>
+						);
+					})}
+				</div>
 			</div>
 		);
 	}
 
-	// 3. Digital Receipt: Rendered immediately after payment/order placement as per chosen method
+	// 3. Empty Cart: No order placed and nothing selected
+	if (!selectedProducts.length && !order?.products?.length) {
+		return (
+			<div className="cartPage">
+				<NoContent label={"Aren't you hungry?"} animationName="FoodBurgerHappy" />
+				{orderHistory.length > 0 && (
+					<div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+						<Button type="secondary" label={`📜 View Previous Orders (${orderHistory.length})`} onClick={() => setShowHistoryView(true)} />
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	// 4. Digital Receipt: Rendered immediately after payment/order placement as per chosen method
 	if (order?.products?.length && (!selectedProducts.length || viewReceipt)) {
 		const orderDate = new Date(
 			(order as unknown as { createdAt?: string; updatedAt?: string }).createdAt || (order as unknown as { updatedAt?: string }).updatedAt || new Date(),
@@ -255,6 +337,21 @@ const CartPage = (props: TCartPageProps) => {
 							<Button type="secondaryDanger" label="Cancel Order" loading={cancelingOrder} onClick={onCancelOrder} />
 						) : null}
 					</div>
+
+					{orderHistory.length > 0 && (
+						<div
+							style={{
+								textAlign: "center",
+								marginTop: "6px",
+								cursor: "pointer",
+								color: "#38bdf8",
+								fontSize: "0.85rem",
+								fontWeight: 600,
+							}}
+							onClick={() => setShowHistoryView(true)}>
+							📜 View Previous Orders History ({orderHistory.length})
+						</div>
+					)}
 				</div>
 			</div>
 		);

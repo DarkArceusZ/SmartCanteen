@@ -21,11 +21,11 @@ const Orders = (props: TOrdersProps) => {
 		return <OrderHistory onScroll={onScroll} />;
 	}
 
-	if (subTab === "active") {
-		return <ActiveOrders onScroll={onScroll} />;
+	if (subTab === "requests") {
+		return <OrderRequests onScroll={onScroll} />;
 	}
 
-	return <OrderRequests onScroll={onScroll} />;
+	return <ActiveOrders onScroll={onScroll} />;
 };
 
 export default Orders;

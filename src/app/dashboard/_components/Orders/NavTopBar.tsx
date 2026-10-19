@@ -2,6 +2,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { useEffect } from "react";
 
+import { useAdmin } from "#components/context/useContext";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 
 import "./navTopBar.scss";
@@ -26,14 +27,18 @@ const NavTopBar = (props: TNavTopBarProps) => {
 	const { title, menuOpen, onClick } = props;
 
 	const queryParams = useQueryParams();
-	const tab = queryParams.get("tab") ?? "";
-	const subTab = queryParams.get("subTab") ?? "";
+	const tab = queryParams.get("tab") || "orders";
+	const subTab = queryParams.get("subTab") || (tab === "orders" ? "active" : "");
 
-	const currentNav = subNavItems[tab];
+	const { orderRequest = [], orderActive = [], orderHistory = [] } = useAdmin();
+
+	const currentNav = subNavItems[tab] || subNavItems.orders;
 
 	useEffect(() => {
-		if (tab && !currentNav?.some((item) => item.route === subTab)) queryParams.set({ subTab: currentNav?.[0]?.route });
-	}, [currentNav, queryParams, subTab, tab]);
+		if (currentNav && !currentNav.some((item) => item.route === subTab)) {
+			queryParams.set({ subTab: currentNav[0]?.route });
+		}
+	}, [currentNav, queryParams, subTab]);
 
 	return (
 		<div className="navTopBar" id="navBar">
@@ -49,10 +54,21 @@ const NavTopBar = (props: TNavTopBarProps) => {
 				</div>
 				<div className="navBarContainer">
 					{currentNav?.map((item, i) => {
+						const count =
+							tab === "orders"
+								? item.route === "requests"
+									? orderRequest?.length
+									: item.route === "active"
+										? orderActive?.length
+										: orderHistory?.length
+								: undefined;
 						return (
 							<div key={i} className={clsx("item", subTab === item?.route && "active")} onClick={() => queryParams.set({ subTab: item?.route })}>
 								<span />
-								<p>{item.label}</p>
+								<p>
+									{item.label}
+									{count !== undefined && count > 0 && <span className="tabBadge">{count}</span>}
+								</p>
 							</div>
 						);
 					})}

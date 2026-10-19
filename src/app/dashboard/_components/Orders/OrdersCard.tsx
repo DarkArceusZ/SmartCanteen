@@ -94,23 +94,11 @@ const OrdersCard = (props: TOrdersCard) => {
 				{!data?.products?.length ? (
 					<p className="noContent">No orders yet</p>
 				) : (
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<p className="total rupee" onClick={() => showDetails?.(true)}>
+					<div className="orderMetaRow">
+						<span className="total rupee" onClick={() => showDetails?.(true)}>
 							{data?.orderTotal}
-						</p>
-						{data?.paymentMethod && (
-							<span
-								style={{
-									fontSize: "11px",
-									opacity: 0.85,
-									padding: "2px 6px",
-									borderRadius: "4px",
-									background: "rgba(255,255,255,0.08)",
-									fontWeight: 600,
-								}}>
-								{data.paymentMethod === "upi" ? "UPI" : "Cash"}
-							</span>
-						)}
+						</span>
+						{data?.paymentMethod && <span className={`payBadge ${data.paymentMethod}`}>{data.paymentMethod === "upi" ? "📱 UPI" : "💵 Cash"}</span>}
 					</div>
 				)}
 				<OptionButtons />

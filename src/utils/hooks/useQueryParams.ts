@@ -1,21 +1,26 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 import { createQueryString } from "#utils/helper/common";
 
 export const useQueryParams = () => {
 	const router = useRouter();
-	const current = { pathname: usePathname(), searchParams: useSearchParams() };
-	const ref = useRef(current);
-	ref.current = current;
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
 
-	const get = useCallback((key: string) => ref.current.searchParams.get(key), []);
-	const set = useCallback((query: Record<string, string>) => {
-		const newQuery = createQueryString(ref.current.searchParams, query);
-		const newUrl = newQuery ? `${ref.current.pathname}?${newQuery}` : ref.current.pathname;
-		if (typeof window !== "undefined") {
-			window.history.replaceState(null, "", newUrl);
-		}
-	}, []);
-	return useMemo(() => ({ pathname: current.pathname, router, get, set }), [current.pathname, router, get, set]);
+	const get = useCallback((key: string) => searchParams.get(key), [searchParams]);
+	const set = useCallback(
+		(query: Record<string, string>, options?: { shallow?: boolean }) => {
+			const newQuery = createQueryString(searchParams, query);
+			const newUrl = newQuery ? `${pathname}?${newQuery}` : pathname;
+			if (options?.shallow && typeof window !== "undefined") {
+				window.history.replaceState(null, "", newUrl);
+			} else {
+				router.replace(newUrl, { scroll: false });
+			}
+		},
+		[pathname, router, searchParams],
+	);
+
+	return useMemo(() => ({ pathname, router, get, set }), [pathname, router, get, set]);
 };
