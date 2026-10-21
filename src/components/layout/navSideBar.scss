@@ -126,8 +126,16 @@
 			padding: 5px 6px;
 			outline: none;
 			cursor: pointer;
+			transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+			&:active {
+				transform: scale(0.93);
+			}
 
 			&.active {
+				&:active {
+					transform: scale(0.93);
+				}
 
 				.navItemContent {
 					background-color: hsl(var(--colorBrandPrimary));

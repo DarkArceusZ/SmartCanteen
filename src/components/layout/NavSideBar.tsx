@@ -26,13 +26,23 @@ const NavSideBar = (props: TNavSideBar) => {
 	const onNavClick = (tabValue: string) => {
 		setForceCollapsed(true);
 		setExpanded(false);
-		if (tabValue === "home") {
+
+		// Handle Menu and Home clicks on customer restaurant view
+		if (tabValue === "menu" || tabValue === "home") {
 			if (pathname && pathname !== "/" && !pathname.startsWith("/dashboard") && !pathname.startsWith("/kitchen")) {
 				queryParams.set({ tab: "menu" });
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("smartcanteen-menu-reset"));
+					const mainContainer = document.querySelector(".orderPage .mainContainer") as HTMLElement | null;
+					if (mainContainer) {
+						mainContainer.scrollTo({ top: 0, behavior: "smooth" });
+					}
+				}
 				return;
 			}
 			return router.push("/");
 		}
+
 		if (tabValue === "kitchen") return router.push("/kitchen");
 		if (tabValue === "signout") {
 			const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
