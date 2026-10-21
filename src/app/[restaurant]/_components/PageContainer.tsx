@@ -13,7 +13,7 @@ export default function PageContainer() {
 
 	return (
 		<div className="pageContainer">
-			{activeTab === "menu" && <OrderPage />}
+			{(activeTab === "menu" || activeTab === "home") && <OrderPage />}
 			{activeTab === "explore" && <ExplorePage />}
 			{activeTab === "reviews" && <ReviewsPage />}
 			{activeTab === "contact" && <ContactPage />}
