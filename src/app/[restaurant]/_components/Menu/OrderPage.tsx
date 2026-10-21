@@ -4,8 +4,6 @@ import { type UIEvent, useCallback, useEffect, useMemo, useRef, useState } from 
 
 import { ActionCard, Button, Spinner } from "xtreme-ui";
 
-
-
 import SearchButton from "#components/base/SearchButton";
 
 import SideSheet from "#components/base/SideSheet";
@@ -18,8 +16,6 @@ import type { TMenu } from "#utils/database/models/menu";
 
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 
-
-
 import CartPage from "./CartPage";
 
 import MenuCard from "./MenuCard";
@@ -27,8 +23,6 @@ import MenuCard from "./MenuCard";
 import UserLogin from "./UserLogin";
 
 import "./orderPage.scss";
-
-
 
 const OrderPage = () => {
 
@@ -60,13 +54,9 @@ const OrderPage = () => {
 
 	const { restaurant, loading: restaurantLoading } = useRestaurant();
 
-
-
 	const menus = useMemo(() => (restaurant?.menus as Array<TMenuCustom>) || [], [restaurant?.menus]);
 
 	const params = useQueryParams();
-
-
 
 	const [searchValue, setSearchValue] = useState(() => params.get("search")?.trim() ?? "");
 
@@ -78,8 +68,6 @@ const OrderPage = () => {
 
 	});
 
-
-
 	const order = useRef<HTMLDivElement>(null);
 
 	const categories = useRef<HTMLDivElement>(null);
@@ -88,17 +76,18 @@ const OrderPage = () => {
 
 	const [orderHeading, setOrderHeading] = useState(["Explore", "Menu"]);
 
-	const [sideSheetHeading, setSideSheetHeading] = useState(["Your", "Order"]);
-
-
+	const sideSheetHeading = useMemo<[string, string]>(() => {
+		if (selectedProducts.length > 0) return ["Your", "Cart"];
+		if (activeOrder?.products?.length) return ["Digital", "Receipt"];
+		return ["Your", "Order"];
+	}, [selectedProducts.length, activeOrder?.products?.length]);
+	const setSideSheetHeading = useCallback((_heading: [string, string]) => {}, []);
 
 	const [searchActive, setSearchActive] = useState(false);
 
 	const [floatHeader, setFloatHeader] = useState(false);
 
 	const [showInfoCardId, setShowInfoCardId] = useState<string>("");
-
-
 
 	// Instant local filtering with useMemo
 
@@ -122,13 +111,9 @@ const OrderPage = () => {
 
 	}, [menus, searchValue, selectedCategory]);
 
-
-
 	const imageProducts = useMemo(() => filteredProducts.filter((product) => !product.hidden && Boolean(product.image)), [filteredProducts]);
 
 	const nonImageProducts = useMemo(() => filteredProducts.filter((product) => !product.hidden && !product.image), [filteredProducts]);
-
-
 
 	// O(1) quantity lookup for all menu cards
 
@@ -145,8 +130,6 @@ const OrderPage = () => {
 		return map;
 
 	}, [selectedProducts]);
-
-
 
 	const onMenuScroll = (event: UIEvent<HTMLDivElement>) => {
 
@@ -168,8 +151,6 @@ const OrderPage = () => {
 
 	};
 
-
-
 	const onCategoryClick = useCallback(
 
 		(categoryName: string) => {
@@ -190,8 +171,6 @@ const OrderPage = () => {
 
 	);
 
-
-
 	const allCategories = useMemo(() => {
 
 		const cats = restaurant?.profile?.categories || [];
@@ -199,8 +178,6 @@ const OrderPage = () => {
 		return ["all", ...cats];
 
 	}, [restaurant?.profile?.categories]);
-
-
 
 	const handleScrollLeft = useCallback(() => {
 
@@ -230,8 +207,6 @@ const OrderPage = () => {
 
 	}, [allCategories, selectedCategory, onCategoryClick]);
 
-
-
 	const handleScrollRight = useCallback(() => {
 
 		const currentIdx = allCategories.findIndex((c) => c.toLowerCase() === selectedCategory.toLowerCase());
@@ -260,8 +235,6 @@ const OrderPage = () => {
 
 	}, [allCategories, selectedCategory, onCategoryClick]);
 
-
-
 	const handleIncreaseProduct = useCallback(
 
 		(item: TMenuCustom) => {
@@ -275,8 +248,6 @@ const OrderPage = () => {
 		[increaseProductQuantity, setSideSheetOpen],
 
 	);
-
-
 
 	const onSearchChange = useCallback(
 
@@ -292,8 +263,6 @@ const OrderPage = () => {
 
 	);
 
-
-
 	const onLoginClick = useCallback(() => {
 
 		if (!params.get("table")) {
@@ -306,8 +275,6 @@ const OrderPage = () => {
 
 	}, [params, setLoginOpen]);
 
-
-
 	useEffect(() => {
 
 		if (session.data?.role === "customer") setOrderHeading(["Choose", "Order"]);
@@ -315,8 +282,6 @@ const OrderPage = () => {
 		else setOrderHeading(["Explore", "Menu"]);
 
 	}, [session.data?.role]);
-
-
 
 	return (
 
@@ -381,8 +346,6 @@ const OrderPage = () => {
 					</div>
 
 				</div>
-
-
 
 				{restaurant && (
 
@@ -586,11 +549,7 @@ const OrderPage = () => {
 
 };
 
-
-
 export default OrderPage;
-
-
 
 type TMenuCustom = TMenu & { quantity: number };
 

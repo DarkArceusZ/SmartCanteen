@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "xtreme-ui";
 
@@ -35,15 +35,23 @@ const CartPage = (props: TCartPageProps) => {
 		);
 	}, [selectedProducts]);
 
+	const lastHeadingRef = useRef<string>("");
+	const { setSideSheetHeading } = props;
+
 	useEffect(() => {
-		if (selectedProducts.length > 0 && !viewReceipt) {
-			props.setSideSheetHeading?.(["Your", "Cart"]);
-		} else if (order?.products?.length) {
-			props.setSideSheetHeading?.(["Digital", "Receipt"]);
-		} else {
-			props.setSideSheetHeading?.(["Your", "Cart"]);
+		const nextHeading =
+			selectedProducts.length > 0 && !viewReceipt
+				? "Your Cart"
+				: order?.products?.length
+					? "Digital Receipt"
+					: "Your Cart";
+
+		if (lastHeadingRef.current !== nextHeading) {
+			lastHeadingRef.current = nextHeading;
+			const parts = nextHeading.split(" ") as [string, string];
+			setSideSheetHeading?.(parts);
 		}
-	}, [selectedProducts.length, order?.products?.length, viewReceipt, props]);
+	}, [selectedProducts.length, order?.products?.length, viewReceipt, setSideSheetHeading]);
 
 	const onPlaceOrder = async () => {
 		if (selectedProducts.length === 0) return;
